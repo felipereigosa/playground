@@ -1,0 +1,49 @@
+
+X move buttons up and down
+X add finger tips to hands
+X make buttons avoid finger tips
+X vibrate when button is pressed
+X play sound when button is pressed
+X create other tip
+X record left hand too
+
+clean up code
+create playground project
+commit
+
+create calculator grab handles (receeded, border, with bumps, adds nice visual variety too)
+hide tip
+only press if hand is open (hide/move tip on press?)
+do other calculator buttons
+find nice background music
+
+------------------------------------------ later
+create hand other animations (and find way to interpolate)
+draw digit
+implement poking hand animation (have to find the hand asset too)
+make it look really good
+show digit when I press button
+light up buttons
+make button press noise
+create on button with display lighting up
+add physics
+add chain?
+
+------------------------------------------ done
+
+X find model
+X create project (from tamagochi)
+X move machinery to index.js
+X record and replay controller button presses
+
+X use hand rotation
+X fix missing hand animation
+X use or not avatar/groups depending if it is vr
+X grab cube
+X start with scene
+X hide vr button
+X grab calculator
+X save and restore view
+X update actions to save rotation instead and remove extra code
+X reset scene with backspace
+X controller movement

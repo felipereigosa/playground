@@ -1,0 +1,57 @@
+const fs = require('fs');
+const CopyPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const express = require('express');
+const bodyParser = require('body-parser');
+
+module.exports = {
+  mode: 'development',
+  devServer: {
+    hot: true,
+    liveReload: true,
+    https: {
+      key: fs.readFileSync('key.pem'),
+      cert: fs.readFileSync('cert.pem'),
+    },
+    host: '0.0.0.0',
+
+    onBeforeSetupMiddleware: (devServer) => {
+      const app = express();
+      app.use(bodyParser.json({ limit: '10mb' }));
+
+      app.post('/store-actions', (req, res) => {
+        fs.writeFile('actions.json', JSON.stringify(req.body), (err) => {});
+      });
+
+      app.get('/get-actions', (req, res) => {
+        fs.readFile('actions.json', 'utf8', (err, data) => {
+          res.json(JSON.parse(data));
+        });
+      });
+
+      app.post('/store-view', (req, res) => {
+        fs.writeFile('view.json', JSON.stringify(req.body), (err) => {});
+      });
+
+      app.get('/get-view', (req, res) => {
+        fs.readFile('view.json', 'utf8', (err, data) => {
+          res.json(JSON.parse(data));
+        });
+      });
+
+      devServer.app.use(app);
+    },
+  },
+
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: 'assets', to: '' },
+      ],
+    }),
+
+    new HtmlWebpackPlugin({
+      template: './src/index.html',
+    }),
+  ],
+};
