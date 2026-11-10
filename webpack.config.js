@@ -38,16 +38,6 @@ module.exports = {
       const app = express();
       app.use(bodyParser.json({ limit: '10mb' }));
 
-      app.post('/store-actions', (req, res) => {
-        fs.writeFile('actions.json', JSON.stringify(req.body), (err) => {});
-      });
-
-      app.get('/get-actions', (req, res) => {
-        fs.readFile('actions.json', 'utf8', (err, data) => {
-          res.json(JSON.parse(data));
-        });
-      });
-
       app.post('/store-view', (req, res) => {
         fs.writeFile('view.json', JSON.stringify(req.body), (err) => {});
       });

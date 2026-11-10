@@ -5,7 +5,6 @@ import { VelocityEstimator } from "./velocity.js"
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as util from './util.js'
 import * as world from './world'
-import * as recorder from './recorder.js'
 import * as hand from './hand.js'
 import * as environment from './environment.js'
 
@@ -287,14 +286,7 @@ export function buttonPressed (side, button) {
   else if (side === 'left' && button === 'x') {
     alignToHead()
   }
-  else if (button === 'x' && side === 'right') {
-    recorder.toggleRecording()
-  }
   else {
-    let action = hand.getTransform(side)
-    action.hand = side
-    action.button = button
-    recorder.log('buttonPressed', action)
     if (world?.buttonPressed) {
       world?.buttonPressed(side, button)
     }
@@ -303,14 +295,8 @@ export function buttonPressed (side, button) {
 }
 
 export function buttonReleased (side, button) {
-  if (button === 'x' || (button === 'y' && side === 'left')) {
-    // system buttons: right A records, left X aligns, left Y leaves VR
-  }
-  else {
-    let action = hand.getTransform(side)
-    action.hand = side
-    action.button = button
-    recorder.log('buttonReleased', action)
+  // Left X and Y are taken: X aligns to the head, Y leaves VR
+  if (side !== 'left' || (button !== 'x' && button !== 'y')) {
     if (world?.buttonReleased) {
       world?.buttonReleased(side, button)
     }
@@ -331,9 +317,6 @@ function render () {
 
     for (let side of ['right', 'left']) {
       hand.update(side)
-      let action = hand.getTransform(side)
-      action.hand = side
-      recorder.log('moved', action)
     }
 
     if (world?.update) {
@@ -450,9 +433,6 @@ document.addEventListener('keydown', function(event) {
   }
   else if (event.key === 'Control') {
     controlPressed = true
-  }
-  else if (event.key === 'p') {
-    recorder.togglePlayback()
   }
   else if (event.key === 'v' && controlPressed) {
     saveView()

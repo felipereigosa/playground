@@ -1,6 +1,5 @@
 
 node_modules/
-actions.json
 view.json
 cert.pem
 key.pem
