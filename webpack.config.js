@@ -7,8 +7,12 @@ const { execFile, execFileSync } = require('child_process');
 
 // The dev server runs on the laptop, whose adb reaches the Quest (wireless).
 const adb = process.env.ADB || `${process.env.HOME}/Android/platform-tools/adb`;
-// Felipe's own build of Moonlight XR (~/Files/projects/virtual-desktop)
-const moonlight = 'com.gilleece.moonlightxr.debug/com.limelight.PcView';
+// Felipe's own build of Moonlight XR (~/Files/projects/virtual-desktop).
+// Its shortcut entry streams the named host and app straight away, resuming
+// the session if that app is still running on the host: no menus.
+const moonlight = 'com.gilleece.moonlightxr.debug/com.limelight.ShortcutTrampoline';
+const moonlightHost = 'predator';
+const moonlightApp = 'Desktop';
 
 function questSerial () {
   const devices = execFileSync(adb, ['devices', '-l']).toString();
@@ -54,15 +58,13 @@ module.exports = {
         });
       });
 
-      // Back to Moonlight on the Quest, called when leaving VR. Launched
-      // like the home screen does, so the running stream comes to the front.
+      // Back to the laptop's desktop in Moonlight, called when leaving VR
       app.post('/desktop', (req, res) => {
         const serial = questSerial();
         if (!serial) return res.sendStatus(404);
-        execFile(adb, ['-s', serial, 'shell', 'am', 'start',
-                       '-a', 'android.intent.action.MAIN',
-                       '-c', 'android.intent.category.LAUNCHER',
-                       '-n', moonlight],
+        execFile(adb, ['-s', serial, 'shell', 'am', 'start', '-n', moonlight,
+                       '--es', 'Name', moonlightHost,
+                       '--es', 'AppName', moonlightApp],
                  err => res.sendStatus(err ? 500 : 200));
       });
 
