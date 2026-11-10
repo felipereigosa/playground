@@ -10,10 +10,13 @@ module.exports = {
     hot: true,
     liveReload: true,
     port: 3000,
-    https: {
+    // Plain http by default: reached through localhost (adb reverse, ssh
+    // tunnel), which browsers already treat as secure for WebXR.
+    // HTTPS=1 serves the self-signed cert, for opening it across the LAN.
+    https: process.env.HTTPS ? {
       key: fs.readFileSync('key.pem'),
       cert: fs.readFileSync('cert.pem'),
-    },
+    } : false,
     host: '0.0.0.0',
 
     onBeforeSetupMiddleware: (devServer) => {
