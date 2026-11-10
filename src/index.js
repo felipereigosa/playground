@@ -7,6 +7,7 @@ import * as util from './util.js'
 import * as world from './world'
 import * as recorder from './recorder.js'
 import * as hand from './hand.js'
+import * as environment from './environment.js'
 
 let entered
 
@@ -65,7 +66,7 @@ function pollControllers () {
 async function init () {
   try {
     window.scene = new THREE.Scene()
-    scene.background = new THREE.Color('black')
+    environment.create()
 
     const ratio = window.innerWidth / window.innerHeight
     window.camera = new THREE.PerspectiveCamera(60, ratio, 0.1, 5000)
@@ -73,21 +74,14 @@ async function init () {
 
     let axesHelper = new THREE.AxesHelper(20)
     axesHelper.name = 'axis'
-    axesHelper.visible = true
+    axesHelper.visible = false
     scene.add(axesHelper)
 
     window.renderer = new THREE.WebGLRenderer({antialias: true})
     renderer.setSize(window.innerWidth, window.innerHeight)
     document.body.appendChild(renderer.domElement)
 
-    renderer.toneMapping = THREE.ReinhardToneMapping
-
-    const hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 4)
-    scene.add(hemiLight)
-
-    const light = new THREE.SpotLight('white', 4)
-    light.position.set(-50, 50, 50)
-    scene.add(light)
+    renderer.shadowMap.enabled = true
 
     window.controls = new OrbitControls(camera, renderer.domElement)
     controls.target.set(0, 0, 0)
@@ -113,6 +107,9 @@ async function init () {
     renderer.xr.addEventListener('sessionstart', () => {
       entered = true
     })
+    renderer.xr.addEventListener('sessionend', () => {
+      entered = false
+    })
 
     //     window.physics = new CANNON.World()
     //     physics.gravity.set(0, -9.82, 0)
@@ -120,7 +117,10 @@ async function init () {
 
     let leftController, rightController
 
-    navigator.xr.isSessionSupported('immersive-vr')
+    const xrSupported = navigator.xr
+      ? navigator.xr.isSessionSupported('immersive-vr')
+      : Promise.resolve(false)
+    xrSupported
       .then(isVR => {
         leftController = isVR ? renderer.xr.getControllerGrip(0) : new THREE.Group()
         leftController.name = 'left_controller'
@@ -141,6 +141,13 @@ async function init () {
         }
         else {
           document.body.appendChild(VRButton.createButton(renderer))
+          // On the headset a click anywhere on the page enters VR
+          document.addEventListener('click', event => {
+            const button = document.getElementById('VRButton')
+            if (!entered && button && event.target !== button) {
+              button.click()
+            }
+          })
         }
       })
 
@@ -219,7 +226,24 @@ function adjustHeight () {
   }
 }
 
+// Both thumbsticks clicked together: end the VR session and ask the dev
+// server (on the laptop) to bring Moonlight back to the front on the Quest.
+const thumbsticks = {left: false, right: false}
+
+function backToDesktop () {
+  fetch('/desktop', {method: 'POST'})
+  renderer.xr.getSession()?.end()
+}
+
 export function buttonPressed (side, button) {
+  if (button === 'thumbstick') {
+    thumbsticks[side] = true
+    if (thumbsticks.left && thumbsticks.right) {
+      backToDesktop()
+      return
+    }
+  }
+
   if (button === 'x' && side === 'right') {
     recorder.toggleRecording()
   }
@@ -236,6 +260,10 @@ export function buttonPressed (side, button) {
 }
 
 export function buttonReleased (side, button) {
+  if (button === 'thumbstick') {
+    thumbsticks[side] = false
+  }
+
   if (!(button === 'x' && side === 'right')) {
     let action = hand.getTransform(side)
     action.hand = side

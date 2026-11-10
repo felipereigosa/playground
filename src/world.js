@@ -6,7 +6,6 @@ const gadgets = {
   calculator: () => import('./calculator/calculator.js'),
   tiles: () => import('./tiles/tiles.js'),
   cube: () => import('./cube/cube.js'),
-  origami: () => import('./origami/origami.js'),
   gun: () => import('./gun/gun.js'),
 }
 
