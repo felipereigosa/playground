@@ -106,6 +106,7 @@ async function init () {
     //renderer.shadowMap.enabled = true
     renderer.xr.addEventListener('sessionstart', () => {
       entered = true
+      framesUntilLyingCheck = 30
     })
     renderer.xr.addEventListener('sessionend', () => {
       entered = false
@@ -193,17 +194,26 @@ function move () {
   avatar.position.z = util.within(avatar.position.z, -5.5, 5.5)
 }
 
+// Turns about the vertical through the head, so it also works when the
+// avatar is tilted by alignToHead
+function rotateAroundHead (angle) {
+  const up = new THREE.Vector3(0, 1, 0)
+  const head = camera.getWorldPosition(new THREE.Vector3())
+  avatar.position.sub(head).applyAxisAngle(up, angle).add(head)
+  avatar.rotateOnWorldAxis(up, angle)
+}
+
 let thumb = false
 function turn () {
   const value = getAxes('right')[0]
   const angleSize = util.toRadians(45)
   if (value > 0.9 && !thumb) {
     thumb = true
-    avatar.rotation.y -= angleSize
+    rotateAroundHead(-angleSize)
   }
   else if (value < -0.9 && !thumb) {
     thumb = true
-    avatar.rotation.y += angleSize
+    rotateAroundHead(angleSize)
   }
   else if (value === 0) {
     thumb = false
@@ -226,25 +236,58 @@ function adjustHeight () {
   }
 }
 
-// Both thumbsticks clicked together: end the VR session and ask the dev
-// server (on the laptop) to bring Moonlight back to the front on the Quest.
-const thumbsticks = {left: false, right: false}
+// Lying down: turns the world so that "up" is wherever the top of the head
+// points now and the eyes look level, and puts the head just in front of the
+// current gadget. Floor and grid are hidden, leaving the sky. Left X does it
+// any time, and it happens by itself on entering VR with the head tilted
+// more than 45 degrees.
+let framesUntilLyingCheck = 0
 
+function alignToHead () {
+  if (!renderer.xr.isPresenting) return
+
+  scene.updateMatrixWorld(true)
+  const headNow = camera.getWorldPosition(new THREE.Vector3())
+  const target = world.focusPoint()
+  const headTarget = target
+    ? target.add(new THREE.Vector3(0, 0.15, 0.45))
+    : headNow
+
+  avatar.quaternion.copy(camera.quaternion).invert()
+  const headOffset = camera.position.clone().applyQuaternion(avatar.quaternion)
+  avatar.position.copy(headTarget).sub(headOffset)
+
+  for (const name of ['ground', 'grid']) {
+    scene.getObjectByName(name).visible = false
+  }
+}
+
+function checkLying () {
+  if (framesUntilLyingCheck > 0 && renderer.xr.isPresenting &&
+      --framesUntilLyingCheck === 0) {
+    const up = new THREE.Vector3(0, 1, 0)
+      .applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()))
+    if (up.y < Math.cos(util.toRadians(45))) {
+      alignToHead()
+    }
+  }
+}
+
+// Left Y: end the VR session and ask the dev server (on the laptop) to put
+// the Quest back on the laptop's desktop in Moonlight.
 function backToDesktop () {
   fetch('/desktop', {method: 'POST'})
   renderer.xr.getSession()?.end()
 }
 
 export function buttonPressed (side, button) {
-  if (button === 'thumbstick') {
-    thumbsticks[side] = true
-    if (thumbsticks.left && thumbsticks.right) {
-      backToDesktop()
-      return
-    }
+  if (side === 'left' && button === 'y') {
+    backToDesktop()
   }
-
-  if (button === 'x' && side === 'right') {
+  else if (side === 'left' && button === 'x') {
+    alignToHead()
+  }
+  else if (button === 'x' && side === 'right') {
     recorder.toggleRecording()
   }
   else {
@@ -260,11 +303,10 @@ export function buttonPressed (side, button) {
 }
 
 export function buttonReleased (side, button) {
-  if (button === 'thumbstick') {
-    thumbsticks[side] = false
+  if (button === 'x' || (button === 'y' && side === 'left')) {
+    // system buttons: right A records, left X aligns, left Y leaves VR
   }
-
-  if (!(button === 'x' && side === 'right')) {
+  else {
     let action = hand.getTransform(side)
     action.hand = side
     action.button = button
@@ -285,6 +327,7 @@ function render () {
     move()
     turn()
     adjustHeight()
+    checkLying()
 
     for (let side of ['right', 'left']) {
       hand.update(side)
