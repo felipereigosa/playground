@@ -152,7 +152,9 @@ export async function open (query = '') {
       const m = await send('Page.captureScreenshot', {format: 'png'})
       fs.writeFileSync(file, Buffer.from(m.result.data, 'base64'))
     },
-    close () {
+    // Leaves the tab blank: an open scene keeps the software renderer busy
+    async close () {
+      await send('Page.navigate', {url: 'about:blank'})
       ws.close()
     },
   }
@@ -183,7 +185,7 @@ if (process.argv[1] === new URL(import.meta.url).pathname && process.argv[2]) {
   finally {
     if (page) {
       console.log(page.logs.filter(l => !/HMR|webpack-dev-server/.test(l)).join('\n'))
-      page.close()
+      await page.close()
     }
   }
 }
