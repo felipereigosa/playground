@@ -9,7 +9,7 @@ module.exports = {
   devServer: {
     hot: true,
     liveReload: true,
-    port: 3000,
+    port: process.env.PORT || 3000,
     // Plain http by default: reached through localhost (adb reverse, ssh
     // tunnel), which browsers already treat as secure for WebXR.
     // HTTPS=1 serves the self-signed cert, for opening it across the LAN.
