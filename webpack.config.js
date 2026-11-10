@@ -9,11 +9,10 @@ module.exports = {
   devServer: {
     hot: true,
     liveReload: true,
-    port: process.env.PORT || 3000,
-    // Plain http by default: reached through localhost (adb reverse, ssh
-    // tunnel), which browsers already treat as secure for WebXR.
-    // HTTPS=1 serves the self-signed cert, for opening it across the LAN.
-    https: process.env.HTTPS ? {
+    port: process.env.PORT || 8300, // the laptop's 3000 is taken
+    // Self-signed cert for the laptop's LAN address, so the Quest can open
+    // it directly. HTTP=1 serves plain http instead.
+    https: !process.env.HTTP ? {
       key: fs.readFileSync('key.pem'),
       cert: fs.readFileSync('cert.pem'),
     } : false,
