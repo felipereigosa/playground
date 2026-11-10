@@ -64,6 +64,10 @@ function pollControllers () {
 
 async function init () {
   try {
+    if (new URLSearchParams(location.search).has('emulate')) {
+      (await import('./emulate.js')).install()
+    }
+
     window.scene = new THREE.Scene()
     environment.create()
 

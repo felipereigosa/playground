@@ -3,17 +3,19 @@ import * as THREE from 'three'
 import * as util from '../util.js'
 import * as player from '../player.js'
 import * as hand from '../hand.js'
+import * as grab from '../grab.js'
 
-export async function init () {
-  window.state = {}
+// One cube at a time, so its state can live in the module
+let state = null
+
+export async function create () {
+  state = {twoHanded: {left: false, right: false}}
 
   const loader = new GLTFLoader()
   const gltf = await loader.loadAsync('cube/cube.glb')
   const cube = gltf.scene.children[0]
 
-  cube.position.set(0, 1, 0)
   cube.scale.setScalar(0.7)
-  scene.add(cube)
 
   let collision = util.findChild(cube, 'collision')
   collision.visible = false
@@ -39,6 +41,11 @@ export async function init () {
   state.scrambled = false
 
   await player.load('cube/clack.ogg')
+  return cube
+}
+
+export function dispose () {
+  state = null
 }
 
 function getFaceParts (direction) {
@@ -122,14 +129,12 @@ function toggleScramble () {
 }
 
 function startHandRotation () {
-  const cube = state.cube
-  state.savedTransform.decompose(cube.position, cube.quaternion, cube.scale)
   state.startLeft = hand.getPosition('left')
   state.startRight = hand.getPosition('right')
   state.endLeft = new THREE.Vector3()
   state.endRight = new THREE.Vector3()
-  avatar.controllers.left.twoHanded = true
-  avatar.controllers.right.twoHanded = true
+  state.twoHanded.left = true
+  state.twoHanded.right = true
   startRotation(getHandsFaceDirection())
 }
 
@@ -154,50 +159,30 @@ function endHandRotation () {
                   endAngle: endAngle}
 }
 
-export function buttonPressed (side, button) {
-  if (button === 'grab') {
-    const controller = avatar.controllers[side]
-    const otherSide = side === 'left' ? 'right' : 'left'
-    const otherController = avatar.controllers[otherSide]
-    let object
-
-    if (otherController.held) {
-      util.transferChild(otherController.held, otherController, scene)
-      otherController.held = null
-      util.pulse(side, 1, 50)
-      startHandRotation()
-    }
-    else if (object = util.getObjectAt(hand.getPosition(side))) {
-      state.savedTransform = object.matrixWorld.clone()
-
-      if (object.parent === otherController) {
-        otherController.held = null
-        otherController.remove(object)
-      }
-      controller.held = object
-      util.transferChild(object, scene, controller)
-      util.pulse(side, 1, 50)
-    }
+// Picking up the cube is done by grab.js. Grabbing with the free hand while
+// the other holds it leaves the cube floating where it is and turns the face
+// between the hands as they move, until both let go.
+export function grabPressed (side) {
+  const holder = grab.other(side)
+  if (grab.heldIn(holder)?.root !== state.cube) {
+    return false
   }
-  else if (button === 'trigger') {
-    toggleScramble()
-  }
+  grab.dropKeepingGrab(holder)
+  util.pulse(side, 1, 50)
+  startHandRotation()
+  return true
 }
 
-export function buttonReleased (side, button) {
-  if (button === 'grab') {
-    const controller = avatar.controllers[side]
-    const otherSide = side === 'left' ? 'right' : 'left'
-    const otherController = avatar.controllers[otherSide]
+export function grabReleased (side) {
+  if (state.twoHanded[side] && !state.twoHanded[grab.other(side)]) {
+    endHandRotation()
+  }
+  state.twoHanded[side] = false
+}
 
-    if (controller.held) {
-      util.transferChild(controller.held, controller, scene)
-      controller.held = null
-    }
-    else if (controller.twoHanded && !otherController.twoHanded) {
-      endHandRotation()
-    }
-    controller.twoHanded = false
+export function buttonPressed (side, button) {
+  if (button === 'trigger') {
+    toggleScramble()
   }
 }
 

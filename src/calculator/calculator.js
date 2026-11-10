@@ -5,8 +5,11 @@ import * as player from '../player.js'
 import * as hand from '../hand.js'
 import { characterMap } from './character_map.js'
 
-export async function init () {
-  window.state = {}
+// One calculator at a time, so its state can live in the module
+let state = null
+
+export async function create () {
+  state = {}
 
   const loader = new GLTFLoader()
   const gltf = await loader.loadAsync('calculator/calculator.glb')
@@ -14,9 +17,7 @@ export async function init () {
   state.base = base
   base.scale.setScalar(0.2)
   base.rotation.x = util.toRadians(30)
-  base.position.y = 0.8
   base.castShadow = true
-  scene.add(base)
 
   util.hideCollisionMeshes(base)
 
@@ -49,10 +50,17 @@ export async function init () {
   state.cursorOn = true
 
   updateCursor()
-  setInterval(updateCursor, 500)
+  state.cursorTimer = setInterval(updateCursor, 500)
   turnOffDisplay()
 
   await player.load('calculator/button.ogg')
+  return base
+}
+
+export function dispose () {
+  clearInterval(state.cursorTimer)
+  state.display.material.map?.dispose()
+  state = null
 }
 
 function getTime () {
@@ -75,6 +83,7 @@ function turnOffDisplay () {
   canvas.height = texture.image.height
   context.fillStyle = color.getStyle()
   context.fillRect(0, 0, canvas.width, canvas.height)
+  state.display.material.map?.dispose()
   state.display.material.map = new THREE.CanvasTexture(canvas)
   state.display.material.needsUpdate = true
   state.on = false
@@ -117,6 +126,7 @@ function updateDisplay () {
       }
     }
   }
+  state.display.material.map?.dispose()
   state.display.material.map = new THREE.CanvasTexture(canvas)
   state.display.material.needsUpdate = true
 }
@@ -145,46 +155,22 @@ export function mouseReleased (event) {
   }
 }
 
-export function buttonPressed (side, button) {
-  if (button === 'grab') {
-    const controller = avatar.controllers[side]
-    const otherSide = side === 'left' ? 'right' : 'left'
-    const otherController = avatar.controllers[otherSide]
+// Picking up the calculator itself is done by grab.js; this is for the lid
+export function grabPressed (side, hit) {
+  if (hit === state.lid) {
     const position = hand.getPosition(side)
-    const object = util.getObjectAt(position)
-
-    if (object) {
-      if (object.name === 'base') {
-        if (object.parent === otherController) {
-          otherController.held = null
-          otherController.remove(object)
-        }
-
-        controller.held = object
-        util.transferChild(object, scene, controller)
-        util.pulse(side, 1, 50)
-      }
-      else if (object.name === 'lid') {
-        object.worldToLocal(position)
-        position.z = 0
-        object.side = side
-        object.point = position
-      }
-    }
+    state.lid.worldToLocal(position)
+    position.z = 0
+    state.lid.side = side
+    state.lid.point = position
+    return true
   }
+  return false
 }
 
-export function buttonReleased (side, button) {
-  if (button === 'grab') {
-    const controller = avatar.controllers[side]
-
-    if (controller.held) {
-      util.transferChild(controller.held, controller, scene)
-      controller.held = null
-    }
-    else {
-      state.lid.side = null
-    }
+export function grabReleased (side) {
+  if (state.lid.side === side) {
+    state.lid.side = null
   }
 }
 

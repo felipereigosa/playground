@@ -46,17 +46,14 @@ export function isInsideObject (object, position) {
   return false
 }
 
+// The object whose collision mesh contains the position: the mesh's parent.
+// Only meshes named collision* (hidden boxes made in Blender) are tested.
 export function getObjectAt (position) {
   let result = null
-  scene.traverse((object) => {
-    if (isInsideObject(object, position)) {
-      if (object.name.startsWith('collision')) {
-        result = object.parent
-      }
-      // else {
-      //   result = object
-      // }
-      return
+  scene.traverse(object => {
+    if (!result && object.name.startsWith('collision') &&
+        isInsideObject(object, position)) {
+      result = object.parent
     }
   })
   return result

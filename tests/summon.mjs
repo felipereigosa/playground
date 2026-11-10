@@ -1,0 +1,57 @@
+// Watch, menu, summoning, dropping and putting away, in the emulated headset:
+// node scripts/emulator.mjs tests/summon.mjs (screenshots in /tmp/scen)
+export const query = ''
+const info = page => page.eval(`(() => {
+  let real = null; scene.traverse(o => { if (o.userData.gadget) real = o })
+  return {open: menu.isOpen(), held: grab.heldIn('right')?.name || null,
+    real: real && {name: real.userData.gadget, scale: +real.scale.x.toFixed(3), parent: real.parent.name || real.parent.type}}
+})()`)
+async function handTo (page, side, target) {
+  await page.eval(`(() => { const p = xrDevice.controllers['${side}'].position, g = hand.getPosition('${side}'), t = new THREE.Vector3(...${JSON.stringify(target)}); p.set(p.x + t.x - g.x, p.y + t.y - g.y, p.z + t.z - g.z) })()`)
+  await page.frames(3)
+}
+export default async function (page) {
+  (await import('fs')).mkdirSync('/tmp/scen', {recursive: true})
+  await page.enterVR()
+  await page.head([0, 1.6, 0], [-25, 0, 0])
+  await page.hand('left', [-0.05, 1.25, -0.25], [0, -60, -90])
+  await page.hand('right', [0.2, 1.2, -0.2], [-30, 30, 0])
+  await page.shot('/tmp/scen/f0.png')
+  await page.press('right', 'squeeze')
+  await page.tipTo('right', await page.pointOn('face', [0, 0.03, 0]))
+  await page.tipTo('right', await page.pointOn('face', [0, 0, 0]))
+  await page.frames(8)
+  await page.tipTo('right', await page.pointOn('face', [0, 0.05, 0]))
+  await page.release('right', 'squeeze')
+  await page.frames(15)
+  console.log('after tap', JSON.stringify(await info(page)))
+  await page.hand('left', [-0.3, 0.9, 0], [0, 0, 0])
+  await page.hand('right', [0.25, 1.0, 0], [0, 0, 0])
+  await page.wait(1500)
+  await page.shot('/tmp/scen/f1.png')
+  const pivot = await page.eval(`scene.getObjectByName('menu').children[0].children[0].children[0].getWorldPosition(new THREE.Vector3()).toArray()`)
+  await handTo(page, 'right', pivot)
+  await page.press('right', 'squeeze')
+  await page.frames(4)
+  await page.shot('/tmp/scen/f2.png')
+  await page.wait(600)
+  console.log('after summon', JSON.stringify(await info(page)))
+  await page.hand('right', [0.12, 1.35, -0.35], [-20, 0, 0])
+  await page.shot('/tmp/scen/f3.png')
+  await page.hand('right', [0.4, 1.35, -0.35], [0, 0, 0])
+  await page.release('right', 'squeeze')
+  await page.wait(300)
+  console.log('after drop', JSON.stringify(await info(page)))
+  // pick it up again and put it away into the menu
+  const pos = await page.eval(`(() => { let r; scene.traverse(o => { if (o.userData.gadget) r = o }); return r.getWorldPosition(new THREE.Vector3()).toArray() })()`)
+  await handTo(page, 'right', pos)
+  await page.press('right', 'squeeze')
+  console.log('regrab', JSON.stringify(await info(page)))
+  const tiles = await page.eval(`scene.getObjectByName('menu').children[1].children[0].children[0].getWorldPosition(new THREE.Vector3()).toArray()`)
+  await handTo(page, 'right', tiles)
+  await page.release('right', 'squeeze')
+  await page.frames(4)
+  await page.shot('/tmp/scen/f4.png')
+  await page.wait(800)
+  console.log('after put away', JSON.stringify(await info(page)))
+}

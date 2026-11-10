@@ -4,8 +4,11 @@ import * as util from '../util.js'
 import * as player from '../player.js'
 import * as hand from '../hand.js'
 
-export async function init () {
-  window.state = {}
+// One tiles box at a time, so its state can live in the module
+let state = null
+
+export async function create () {
+  state = {moving: {left: null, right: null}}
 
   const loader = new GLTFLoader()
   const gltf = await loader.loadAsync('tiles/tiles.glb')
@@ -13,9 +16,7 @@ export async function init () {
   let collision = box.getObjectByName('collision')
   collision.visible = false
   box.scale.setScalar(0.5)
-  box.interactive = true
-  scene.add(box)
-  box.position.set(0, 0.5, 0)
+  state.box = box
   box.getObjectByName('case').castShadow = true
 
   box.traverse(child => {
@@ -35,10 +36,15 @@ export async function init () {
   }
 
   await player.load('tiles/knock.ogg')
+  return box
+}
+
+export function dispose () {
+  state = null
 }
 
 function getFreePoint () {
-  let box = scene.getObjectByName('box')
+  let box = state.box
   for (let x of [-0.386191, -0.128730, 0.128730, 0.386191]) {
     for (let z of [-0.263768, 0, 0.263768]) {
       let point = new THREE.Vector3(x, 0.15, z)
@@ -51,38 +57,18 @@ function getFreePoint () {
   }
 }
 
-export function buttonPressed (side, button) {
-  if (button === 'grab') {
-    const controller = avatar.controllers[side]
-    const otherSide = side === 'left' ? 'right' : 'left'
-    const otherController = avatar.controllers[otherSide]
-    const object = util.getObjectAt(hand.getPosition(side))
-
-    if (object) {
-      if (object.interactive) {
-        if (object.parent === otherController) {
-          otherController.held = null
-          otherController.remove(object)
-        }
-
-        controller.held = object
-        util.transferChild(object, scene, controller)
-        util.pulse(side, 1, 50)
-      }
-      else {
-        let start = object.position.clone()
-        let end = getFreePoint()
-        let distance = start.distanceTo(end)
-
-        if (distance < 0.3) {
-          controller.movingTile = {which: object,
-                                   start: object.position.clone(),
-                                   end: getFreePoint(),
-                                   snap: 'start'}
-        }
-      }
-    }
+// Picking up the box itself is done by grab.js; this slides a tile next to
+// the hole
+export function grabPressed (side, hit) {
+  if (!hit?.name.startsWith('tile_')) {
+    return false
   }
+  let start = hit.position.clone()
+  let end = getFreePoint()
+  if (start.distanceTo(end) < 0.3) {
+    state.moving[side] = {which: hit, start, end, snap: 'start'}
+  }
+  return true
 }
 
 function snapped (side) {
@@ -90,37 +76,30 @@ function snapped (side) {
   player.play('knock')
 }
 
-export function buttonReleased (side, button) {
-  if (button === 'grab') {
-    const controller = avatar.controllers[side]
-    if (controller.held) {
-      util.transferChild(controller.held, controller, scene)
-      controller.held = null
+export function grabReleased (side) {
+  const movingTile = state.moving[side]
+  if (movingTile) {
+    const tile = movingTile.which
+    let startDistance = tile.position.distanceTo(movingTile.start)
+    let endDistance = tile.position.distanceTo(movingTile.end)
+
+    if (startDistance > 0 && endDistance > 0) {
+      snapped(side)
     }
 
-    if (controller.movingTile) {
-      const tile = controller.movingTile.which
-      let startDistance = tile.position.distanceTo(controller.movingTile.start)
-      let endDistance = tile.position.distanceTo(controller.movingTile.end)
-
-      if (startDistance > 0 && endDistance > 0) {
-        snapped(side)
-      }
-
-      if (startDistance < endDistance) {
-        tile.position.copy(controller.movingTile.start)
-      }
-      else {
-        tile.position.copy(controller.movingTile.end)
-      }
+    if (startDistance < endDistance) {
+      tile.position.copy(movingTile.start)
     }
-    controller.movingTile = null
+    else {
+      tile.position.copy(movingTile.end)
+    }
   }
+  state.moving[side] = null
 }
 
 function updateTile (side) {
-  let box = scene.getObjectByName('box')
-  let movingTile = avatar.controllers[side].movingTile
+  let box = state.box
+  let movingTile = state.moving[side]
 
   if (movingTile) {
     let position = hand.getPosition(side)

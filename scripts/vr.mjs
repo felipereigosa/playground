@@ -12,7 +12,8 @@ import os from 'os'
 
 const adb = process.env.ADB || `${os.homedir()}/Android/platform-tools/adb`
 const devtoolsPort = 9333
-const gadget = process.argv[2] || 'calculator'
+// Gadgets to have in front of you on arriving, e.g. `npm run vr calculator,cube`
+const gadgets = process.argv[2] || ''
 
 const devices = execFileSync(adb, ['devices', '-l']).toString()
 const quest = devices.split('\n').find(l => l.includes('model:Quest'))?.split(/\s+/)[0]
@@ -24,7 +25,7 @@ const shell = (...args) => execFileSync(adb, ['-s', quest, 'shell', ...args]).to
 
 const ip = Object.values(os.networkInterfaces()).flat()
   .find(a => a.family === 'IPv4' && !a.internal).address
-const url = `https://${ip}:8300/?gadget=${gadget}`
+const url = `https://${ip}:8300/${gadgets ? '?gadget=' + gadgets : ''}`
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
