@@ -1,0 +1,17 @@
+
+------------------------------------------ done
+
+X compute endpoints
+X fix tile sides
+X snap to ends
+
+X experiment with environments
+X shadows
+X don't move tiles not adjacent to hole
+X stop playback
+
+X add snap sound (get from hanoi)
+X do other hand as well
+X tweak design to tiles to match room (better picture, different case color)
+X pay linode
+X remove empty functions

@@ -1,0 +1,14 @@
+
+--------------------------------------------- later
+--------------------------------------------- done
+
+X use only vector3 instead of arrays
+X create more lines
+
+X use random colors
+X implement split triangle
+X rotate vertices around line
+
+X implement groupTriangles (given lines)
+X multiple lines
+X rotate each triangle group about next line

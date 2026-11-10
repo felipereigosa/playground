@@ -1,0 +1,11 @@
+
+X draw two rectangles
+X draw a curve between the rectangles
+X external curves
+X draw points equally spaced on the curves
+X draw zigzags
+
+apply constraints to movement of rectangles
+move and rotate rectangles with mouse
+translate to 3d
+force angle when approached

@@ -35,9 +35,9 @@ export function signedAngle(v1, v2, axis) {
 }
 
 export function isInsideObject (object, position) {
-  if (object.geometry) {
+  if (object.geometry && !object.background) {
     const raycaster = new THREE.Raycaster()
-    const direction = new THREE.Vector3(1, 0.1, 0)
+    const direction = new THREE.Vector3(1, 0, 0)
     object.updateMatrixWorld()
     raycaster.set(position, direction)
     object.material.side = THREE.DoubleSide
@@ -53,9 +53,9 @@ export function getObjectAt (position) {
       if (object.name.startsWith('collision')) {
         result = object.parent
       }
-      else {
-        result = object
-      }
+      // else {
+      //   result = object
+      // }
       return
     }
   })
@@ -114,4 +114,65 @@ export function getQuaternion (m, q) {
   const position = new THREE.Vector3()
   const scale = new THREE.Vector3()
   m.decompose(position, q, scale)
+}
+
+export function closestPointOnLine(a, b, c) {
+  const direction = new THREE.Vector3().copy(b).sub(a).normalize();
+  const vectorAC = new THREE.Vector3().copy(c).sub(a);
+  const distanceAlongLine = vectorAC.dot(direction);
+  if (distanceAlongLine < 0) return a
+  if (distanceAlongLine > a.distanceTo(b)) return b
+  const closestPoint = new THREE.Vector3()
+        .copy(direction)
+        .multiplyScalar(distanceAlongLine)
+        .add(a);
+  return closestPoint;
+}
+
+export function findChild (object, prefix) {
+  for (let child of object.children) {
+    if (child.name.startsWith(prefix)) {
+      return child
+    }
+  }
+}
+
+export function axisAlignedVector (vector) {
+  const array = vector.toArray()
+  const absArray = array.map(Math.abs)
+  const index = absArray.indexOf(Math.max(...absArray))
+
+  const axis = [0, 0, 0]
+  axis[index] = 1 * Math.sign(array[index])
+
+  return new THREE.Vector3(...axis)
+}
+
+export function transferChild (object, oldParent, newParent) {
+  scene.updateMatrixWorld(true)
+  const relativeTransform =
+        new THREE.Matrix4()
+        .copy(newParent.matrixWorld)
+        .invert()
+        .multiply(object.matrixWorld)
+  relativeTransform.decompose(object.position, object.quaternion, object.scale)
+  newParent.add(object)
+}
+
+export function printMatrix (matrix) {
+  for (let i = 0; i < 4; i++) {
+    let row = ''
+    for (let j = 0; j < 4; j++) {
+      row += matrix.elements[i * 4 + j].toFixed(2) + ' '
+    }
+    console.log(row)
+  }
+}
+
+export function hideCollisionMeshes (object) {
+  object.traverse((child) => {
+    if (child.name.startsWith('collision')) {
+      child.visible = false
+    }
+  })
 }

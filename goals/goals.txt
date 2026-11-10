@@ -1,0 +1,178 @@
+
+
+--------------------------------- later
+think about physics
+reboot
+create simple corridor with single door
+open door (grab and turn)
+create empty white room on the other side
+dynamically add calculator and logic to deal with it once door is opened
+create door picture
+create door label
+create all other rooms
+
+
+control complexity with rooms and floors
+
+design vr coding keyboard - requirements:
+   must be fast, as fast as typing
+   use hand position, I have a lot of precision there and hand poses in some fashion
+   look into sign language
+   must be able to do normal things with code (jump around, enter numbers, indent etc)
+   build first prototype to be improved later (otherwise I'll never finish)
+   direction for row?
+
+highlight finger that moved relative to hand
+try more fingers
+create two areas
+create floating text
+type two letters based on which finger and location
+switch playground to hands and use some kind of gadget for navigation?
+virtual keyboard and screen (from kairon), virtual movement unit (maybe several for different kinds), other gadgets (calculator etc) + rooms with more complex things (lego, mm, origami)
+
+should I abandon playground for now and do ecosystem right? I mean why not? The whole point of playground is for me to do what I want as a catch all project. If I commit to doing only it I'll be miserable and won't do anything else ever. True, but I'm not saying commit forever, just long enough to launch. Why though, this is for me, not for other people. I'll come back when I'm excited about it, then I can do a new thing and use the momentum to do a bit of framework (summoning objects, new rooms, backpack, website release, etc)
+
+fix hand animation
+create generic room
+integrate lego
+create simple lego machine (can be extended later)
+create jigsaw puzzle (how to have 2d with cool 3d effects)
+
+
+bake classroom
+design mechanism to summon objects
+
+
+
+maybe put the clock on the wall instead (between the shadows, size, unecessary bells, empty wall, etc, maybe i'm better off) then again I like objects on the table, then again again, those objects should be manipulable which isn't really the case for the clock
+load shader programs
+bake light and shadows for the room
+floor doesn't quite match real floor
+light switch with two baked models
+fix aligment of ticks
+optimize clock (single object? one texture?)
+press button of printer to print silly message (fix printer jam?)
+experiment with objects growing as you grab them (or I'm small size)
+improve performance with calculator, maybe others
+can't grab spawned objects
+fix grab on scalled tiles frame
+get lego goals, add fix lego materials
+integrate lego
+fix triangles of handles disappearing at edge of vision (why does it happen for some meshes but not others)
+is there a way to either fix the environment lighting or use it only for metal objects?
+open door with hand
+create lego room at door
+create emission material semi sphere (hard to look at)
+think of a way to integrate urls and locations, if nothing else for debugging purposes
+
+I don't hate the pixar room, after baked. Finish it for lego
+
+integrate origami properly
+
+create better mechanism to spawn objects (keyboard with icons? tapes?)
+implement automatic fist when held is true
+gravity + draft table + normal table?
+refactor framework (world, index, etc)
+use git with stash/diff instead of the test module
+create video (spell boobies)
+different objects on the table
+limit movement at walls (a little smaller even)
+add window view
+different objects on the table
+change the window (larger, my own design)
+create lightbulb
+create plant for the corner
+better table
+put spawn mechanism (whatever it is) on the table
+show shadows on the floor
+find decoration for empty wall (some shelves? a picture?)
+can only see the door (maybe even a different one) from lego side
+create chair
+curtains
+posters
+google desk for ideas (looks and objects to put on top)
+
+----- after initial release
+
+add elevator door to the classroom (fun mechanism + I can go to the next place (tool workshop? robot/drone training ground)
+create applab release
+add subtle movements (to plants say)
+environment instead of baking {
+  I need a test module
+  load the car
+  see if I can duplicate the sketchfab lighting given the tips
+  test chemistry lab
+}
+find texture painting tutorial that teaches the artistic techniques not just the blender side (but to be fair, the textures from classroom look like they are the result of a baking)
+texture painting in vr (is there an app I can use, if not maybe that's a good idea for me to implement)
+deal with other textures (especially glossy)
+follow environment tutorials (watch first see if the results justify it/if I'm missing any knowledge)
+after the classroom is done, can I do the same with my room?
+spend time making it look amazing (https://threejs.org/examples/?q=gltf#webgl_loader_gltf_sheen is what is possible)
+should I make pask style making of videos?
+find a way to type without keyboard so I can integrate kairon too
+use clock for consistent rubiks animation speed?
+fix fist border deformation
+better poses (three fingers edge looks weird)
+use map of actual room
+hide hands on toggle stop/end of playback
+don't update world until initialized
+better actions (indexed? from last backwards?, what about ignore comments and group press/move/release by lines, breakpoints (with game state))
+find better way to deal with collisions (the hiding and showing thing is annoying). Also, is there a way to save the settings of the exporter? Maybe I can create my own exporter that uses my settings and exports all that is visible + whatever is inside collisions?
+the next thing should be tools, I don't want to lose what I created. Plus I can create a nice workshop room for them.
+super creative environments (alien landscapes, impossible architecture, crazy machines). I want to be creative but blender has stable diffusion and programming needs something more concrete. Environments are perfect though and I actually need them. It's perfect
+implement desktop quest controllers
+think about client controlled code (each person using the game can change the code for them to to do anything (whithin the limits of the game))
+deal with modules vs hot reloading
+investigate why premade colors lead to lag
+fix need to keep rebooting the network manager
+simple table with something, tapes? (I need a way to get the objects plus the room is too empty)
+key for the door hanging on a nail?
+start design of control remote robot/car
+find nice background music (can turn on and off at the wall)
+should I make the move away from controllers?
+look into avatar shadow
+try avatar motion smoothing
+what about foot tracking with camera?
+create linode
+felipereigosa.com/playground
+large objects -> make parts and assemble
+need to dematerialize object first so I have the materials to build another -> animation to, from pile of sand
+use zen room for lego for now?
+test upscaling
+show interactive environment to r/blender
+
+--------------------------------- done
+
+X finish cube
+X create sound system used by all subsystems
+X finish calculator
+
+X move hand code to module
+
+X recreate walls and molding
+X load textures in threejs
+
+X better door handle
+
+X create a better clock
+X show correct time on the clock
+X clock ticking
+
+
+X load baked lights objects
+X make highlights work with baked objects
+
+X reboot old scene
+X change background color (remove fog, shaders, etc)
+X reboot baked objects
+X test in vr
+X fix aggressive clipping plane
+X change color of light?
+X why are the baked textures yellowish? (and why don't they look so in blender?)
+X fix mousedown in vr
+X fix lg uv
+X fix bake artifacts (seams, grainy)  (uv? apply modifiers?)
+X try baking only one object (can I create the texture without changing the object?)
+
+X draw sphere at index finger

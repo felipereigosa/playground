@@ -1,17 +1,14 @@
 import * as THREE from 'three'
-import * as CANNON from 'cannon-es'
-import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js'
+// import * as CANNON from 'cannon-es'
 import { VRButton } from 'three/addons/webxr/VRButton.js'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { VelocityEstimator } from "./velocity.js"
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as util from './util.js'
 import * as world from './world'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as recorder from './recorder.js'
+import * as hand from './hand.js'
 
-let renderer
 let entered
-let controls
 
 const buttonNames = ["trigger", "grab", "", "thumbstick", "x", "y", ""]
 let oldState = {left: {buttons: [0, 0, 0, 0, 0, 0, 0], axes: [0, 0]},
@@ -57,144 +54,69 @@ function pollControllers () {
   }
 }
 
-function createStaticBody (x, y, z, hw, hh, hd) {
-  const shape = new CANNON.Box(new CANNON.Vec3(hw, hh, hd))
-  const body = new CANNON.Body({mass: 0})
-  body.addShape(shape)
-  body.position.set(x, y, z)
-  physics.addBody(body)
-}
-
-function playAction (object, actionName, timeScale) {
-  const mixer = object.mixer
-  const clip = THREE.AnimationClip.findByName(object.clips, actionName)
-  const action = mixer.clipAction(clip, object)
-  mixer.stopAllAction()
-  action.reset()
-  action.timeScale = timeScale
-  action.loop = THREE.LoopOnce
-  action.clampWhenFinished = true
-  action.play()
-}
-
-function createEnvironment () {
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6)
-  hemiLight.position.set(0, 50, 0)
-  scene.add(hemiLight)
-
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1)
-  dirLight.color.setHSL(0.1, 1, 0.95)
-  dirLight.position.set(1, 1.75, 0)
-  dirLight.position.multiplyScalar(30)
-  scene.add(dirLight)
-  dirLight.castShadow = true
-  dirLight.shadow.mapSize.width = 4096 * 4
-  dirLight.shadow.mapSize.height = 4096 * 4
-  const d = 6
-  dirLight.shadow.camera.left = - d
-  dirLight.shadow.camera.right = d
-  dirLight.shadow.camera.top = d
-  dirLight.shadow.camera.bottom = -d
-  dirLight.shadow.camera.far = 500
-
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(12, 12),
-                                new THREE.MeshLambertMaterial({color: 0xaaaaaa}))
-  ground.rotation.x = -Math.PI / 2
-  ground.receiveShadow = true
-  scene.add(ground)
-
-  const room = new THREE.LineSegments(
-    new BoxLineGeometry(12, 0.001, 12, 20, 1, 20),
-    new THREE.LineBasicMaterial({color: 0x808080})
-  )
-  room.geometry.translate(0, 0, 0)
-  scene.add(room)
-
-  const vertexShader = `varying vec3 vWorldPosition;
-                        void main() {
-                          vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
-                          vWorldPosition = worldPosition.xyz;
-                          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-                        }`
-
-  const fragmentShader = `uniform vec3 topColor;
-                          uniform vec3 bottomColor;
-                          uniform float offset;
-                          uniform float exponent;
-                          varying vec3 vWorldPosition;
-                          void main() {
-                            float h = normalize( vWorldPosition + offset ).y;
-                            gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( h, exponent ), 0.0 ) ), 1.0 );
-                          }`
-
-  const c = new THREE.Color(0xffffff)
-  c.setHSL(0.6, 1, 0.6)
-  const uniforms = {
-    'topColor': {value: c},
-    'bottomColor': {value: new THREE.Color(0xffffff)},
-    'offset': {value: 500},
-    'exponent': {value: 0.6}
-  }
-  scene.fog.color.copy(uniforms['bottomColor'].value)
-
-  const skyGeo = new THREE.SphereGeometry(4000, 32, 15)
-  const skyMat = new THREE.ShaderMaterial({
-    uniforms: uniforms,
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader,
-    side: THREE.BackSide
-  })
-
-  const sky = new THREE.Mesh(skyGeo, skyMat)
-  scene.add(sky)
-
-  createStaticBody(0, -0.1, 0, 6, 0.1, 6)
-  createStaticBody(0, 6, -6.1, 6, 6, 0.1)
-  createStaticBody(0, 6, 6.1, 6, 6, 0.1)
-  createStaticBody(-6.1, 6, 0, 0.1, 6, 6)
-  createStaticBody(6.1, 6, 0, 0.1, 6, 6)
-}
+// // function createStaticBody (x, y, z, hw, hh, hd) {
+// //   const shape = new CANNON.Box(new CANNON.Vec3(hw, hh, hd))
+// //   const body = new CANNON.Body({mass: 0})
+// //   body.addShape(shape)
+// //   body.position.set(x, y, z)
+// //   physics.addBody(body)
+// // }
 
 async function init () {
   try {
-    entered = false
     window.scene = new THREE.Scene()
-    scene.background = new THREE.Color().setHSL( 0.6, 0, 1 )
-    scene.fog = new THREE.Fog( scene.background, 1, 5000 )
-    window.avatar = new THREE.Group()
-    const width = window.innerWidth
-    const height = window.innerHeight
-    window.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 5000)
-    camera.position.set(0, 1, 4)
-    avatar.clock = new THREE.Clock()
+    scene.background = new THREE.Color('black')
 
+    const ratio = window.innerWidth / window.innerHeight
+    window.camera = new THREE.PerspectiveCamera(60, ratio, 0.1, 5000)
+    camera.position.set(2, 2, 2)
+
+    let axesHelper = new THREE.AxesHelper(20)
+    axesHelper.name = 'axis'
+    axesHelper.visible = true
+    scene.add(axesHelper)
+
+    window.renderer = new THREE.WebGLRenderer({antialias: true})
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    document.body.appendChild(renderer.domElement)
+
+    renderer.toneMapping = THREE.ReinhardToneMapping
+
+    const hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 4)
+    scene.add(hemiLight)
+
+    const light = new THREE.SpotLight('white', 4)
+    light.position.set(-50, 50, 50)
+    scene.add(light)
+
+    window.controls = new OrbitControls(camera, renderer.domElement)
+    controls.target.set(0, 0, 0)
+    controls.mouseButtons = {
+      RIGHT: THREE.MOUSE.ROTATE
+    }
+
+    // vr
+
+    entered = false
+
+    window.avatar = new THREE.Group()
     avatar.add(camera)
     avatar.controllers = {}
     avatar.speed = 0.03
-    avatar.position.y = -0.5
+    avatar.position.y = -0.2
     scene.add(avatar)
 
-    window.physics = new CANNON.World()
-    physics.gravity.set(0, -9.82, 0)
-    physics.allowSleep = true
-
-    createEnvironment()
-
-    renderer = new THREE.WebGLRenderer({antialias: true})
     renderer.setPixelRatio(window.devicePixelRatio)
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.xr.enabled = true
-    renderer.shadowMap.enabled = true
-    document.body.appendChild(renderer.domElement)
+    //renderer.shadowMap.enabled = true
     renderer.xr.addEventListener('sessionstart', () => {
       entered = true
     })
 
-    controls = new OrbitControls(camera, renderer.domElement)
-    controls.target.set(0, 1, 0)
-    controls.mouseButtons = {
-      RIGHT: THREE.MOUSE.ROTATE
-    }
+    //     window.physics = new CANNON.World()
+    //     physics.gravity.set(0, -9.82, 0)
+    //     physics.allowSleep = true
 
     let leftController, rightController
 
@@ -205,12 +127,14 @@ async function init () {
         leftController.velocityEstimator = new VelocityEstimator()
         avatar.add(leftController)
         avatar.controllers['left'] = leftController
+        leftController.position.y = -1000
 
         rightController = isVR ? renderer.xr.getControllerGrip(1) : new THREE.Group()
         rightController.name = 'right_controller'
         rightController.velocityEstimator = new VelocityEstimator()
         avatar.add(rightController)
         avatar.controllers['right'] = rightController
+        rightController.position.y = -1000
 
         if (!isVR) {
           avatar.position.y = 0
@@ -220,40 +144,24 @@ async function init () {
         }
       })
 
-    const loader = new GLTFLoader()
-
-    // const gltf = await loader.loadAsync('axis.glb')
-    // const axis = gltf.scene
-    // scene.add(axis)
-    // axis.background = true
-
-    const gltf = await loader.loadAsync('hand.glb')
-    const rightHand = gltf.scene
-    rightHand.name = 'right_hand'
+    const rightHand = await hand.load()
     rightController.add(rightHand)
-    rightHand.clips = gltf.animations
-    rightHand.mixer = new THREE.AnimationMixer(gltf.scene)
-    rightHand.scale.set(0.95, 0.95, 0.95)
 
-    rightHand.traverse(function (child) {
-      if (child.isMesh) child.castShadow = true
-    })
-
-    const leftHand = util.clone(rightHand)
-    leftHand.name = 'left_hand'
-    leftHand.scale.set(-0.95, 0.95, 0.95)
-    leftHand.clips = gltf.animations
-    leftHand.mixer = new THREE.AnimationMixer(gltf.scene)
+    const leftHand = await hand.load()
+    leftHand.scale.x *= -1
     leftController.add(leftHand)
 
     renderer.setAnimationLoop(render)
 
-    scene.traverse(child => {
-      child.background = true
-    })
+//     scene.traverse(child => {
+//       child.background = true
+//     })
 
     restoreView()
-    world.init()
+
+    if (world?.init) {
+      world?.init()
+    }
   }
   catch (error) {
     console.log(`init error ${error}`)
@@ -280,7 +188,7 @@ function move () {
 
 let thumb = false
 function turn () {
-  const value = getAxes("right")[0]
+  const value = getAxes('right')[0]
   const angleSize = util.toRadians(45)
   if (value > 0.9 && !thumb) {
     thumb = true
@@ -297,7 +205,7 @@ function turn () {
 
 let thumb2 = false
 function adjustHeight () {
-  const value = getAxes("right")[1]
+  const value = getAxes('right')[1]
   if (value > 0.9 && !thumb2) {
     thumb2 = true
     avatar.position.y = util.within(avatar.position.y - 0.5, -0.5, 11.5)
@@ -311,76 +219,55 @@ function adjustHeight () {
   }
 }
 
-function getHandTransform (mesh) {
-  let position = new THREE.Vector3()
-  const quaternion = new THREE.Quaternion()
-  const rotation = new THREE.Euler()
-  mesh.getWorldPosition(position)
-  mesh.getWorldQuaternion(quaternion)
-  rotation.setFromQuaternion(quaternion)
-  return {position, rotation}
-}
-
-export function buttonPressed (hand, button) {
-  if (button === 'x' && hand === 'right') {
-    recorder.toggle()
+export function buttonPressed (side, button) {
+  if (button === 'x' && side === 'right') {
+    recorder.toggleRecording()
   }
   else {
-    const handMesh = avatar.getObjectByName(`${hand}_hand`)
-    if (button === "grab") {
-      playAction(handMesh, "close", 3)
-    }
-    let action = getHandTransform(handMesh)
-    action.hand = hand
+    let action = hand.getTransform(side)
+    action.hand = side
     action.button = button
     recorder.log('buttonPressed', action)
-    world.buttonPressed(hand, button)
+    if (world?.buttonPressed) {
+      world?.buttonPressed(side, button)
+    }
+    hand.animate(side, button, true)
   }
 }
 
-export function buttonReleased (hand, button) {
-  if (!(button === 'x' && hand === 'right')) {
-    const handMesh = avatar.getObjectByName(`${hand}_hand`)
-    if (button === "grab") {
-      playAction(handMesh, "open", 3)
-    }
-    let action = getHandTransform(handMesh)
-    action.hand = hand
+export function buttonReleased (side, button) {
+  if (!(button === 'x' && side === 'right')) {
+    let action = hand.getTransform(side)
+    action.hand = side
     action.button = button
     recorder.log('buttonReleased', action)
-    world.buttonReleased(hand, button)
+    if (world?.buttonReleased) {
+      world?.buttonReleased(side, button)
+    }
+    hand.animate(side, button, false)
   }
 }
-
-const position = new THREE.Vector3()
-const quaternion = new THREE.Quaternion()
 
 function render () {
   try {
     renderer.render(scene, camera)
 
-    physics.fixedStep()
+    // physics.fixedStep()
     pollControllers()
     move()
     turn()
     adjustHeight()
 
-    const delta = avatar.clock.getDelta()
-    const rightHand = scene.getObjectByName("right_hand")
-    rightHand.mixer.update(delta)
-    const leftHand = scene.getObjectByName("left_hand")
-    leftHand.mixer.update(delta)
+    for (let side of ['right', 'left']) {
+      hand.update(side)
+      let action = hand.getTransform(side)
+      action.hand = side
+      recorder.log('moved', action)
+    }
 
-    let rightAction = getHandTransform(rightHand)
-    rightAction.hand = 'right'
-    recorder.log('moved', rightAction)
-
-    let leftAction = getHandTransform(leftHand)
-    leftAction.hand = 'left'
-    recorder.log('moved', leftAction)
-
-    world.update()
-    controls.update()
+    if (world?.update) {
+      world?.update()
+    }
   }
   catch (error) {
     console.log(`render error ${error}`)
@@ -388,6 +275,9 @@ function render () {
 }
 
 init()
+
+let shiftPressed = false
+let controlPressed = false
 
 document.addEventListener('mousedown', function(event) {
   if (event.button === 0) {
@@ -404,28 +294,30 @@ document.addEventListener('mousedown', function(event) {
         let position = new THREE.Vector3()
         child.getWorldPosition(position)
         controls.target = position
+        controls.update()
       }
     }
     else {
-      recorder.log('mousePressed', event)
-      world.mousePressed(event)
+      if (world?.mousePressed) {
+        world?.mousePressed(event)
+      }
     }
   }
 })
 
 document.addEventListener('mousemove', function(event) {
-  world.mouseMoved(event)
+  if (world?.mouseMoved) {
+    world?.mouseMoved(event)
+  }
 })
 
 document.addEventListener('mouseup', function(event) {
   if (event.button === 0) {
-    recorder.log('mouseReleased', event)
-    world.mouseReleased(event)
+    if (world?.mouseReleased) {
+      world?.mouseReleased(event)
+    }
   }
 })
-
-let shiftPressed = false
-let controlPressed = false
 
 function saveView () {
   console.log('saving view')
@@ -451,6 +343,35 @@ function restoreView () {
     })
 }
 
+// function resetScene () {
+//   let toRemove = []
+//   scene.traverse(child => {
+//     if (!child.background) {
+//       toRemove.push(child)
+//     }
+//   })
+
+//   let right = avatar.controllers.right
+//   if (right.held) {
+//     right.remove(right.held)
+//     right.held = null
+//   }
+
+//   let left = avatar.controllers.left
+//   if (left.held) {
+//     left.remove(left.held)
+//     left.held = null
+//   }
+
+//   for (let child of toRemove) {
+//     scene.remove(child)
+//   }
+
+//   if (world?.init) {
+//     world?.init()
+//   }
+// }
+
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Shift') {
     shiftPressed = true
@@ -459,11 +380,8 @@ document.addEventListener('keydown', function(event) {
   else if (event.key === 'Control') {
     controlPressed = true
   }
-  else if (event.key === 'r') {
-    recorder.toggle()
-  }
   else if (event.key === 'p') {
-    recorder.playback()
+    recorder.togglePlayback()
   }
   else if (event.key === 'v' && controlPressed) {
     saveView()
@@ -471,22 +389,17 @@ document.addEventListener('keydown', function(event) {
   else if (event.key === 'v') {
     restoreView()
   }
-  else if (event.key === 'Backspace') {
-    let toRemove = []
-    scene.traverse(child => {
-      if (!child.background) {
-        toRemove.push(child)
-      }
-    })
-
-    for (let child of toRemove) {
-      scene.remove(child)
-    }
-
-    world.init()
+  else if (event.key === 'a') {
+    let axis = scene.getObjectByName('axis')
+    axis.visible = !axis.visible
   }
+  // else if (event.key === 'Backspace') {
+  //   resetScene()
+  // }
   else {
-    world.keyPressed(event)
+    if (world?.keyPressed) {
+      world?.keyPressed(event)
+    }
   }
 })
 
@@ -499,8 +412,8 @@ document.addEventListener('keyup', function(event) {
     controlPressed = false
   }
   else {
-    world.keyReleased(event)
+    if (world?.keyReleased) {
+      world?.keyReleased(event)
+    }
   }
 })
-
-module.hot.accept('./world', function () {});

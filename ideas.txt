@@ -1,0 +1,122 @@
+
+# start with something simple like a castle with paintings for each experiment like mario
+# add uncompleted parts as new paintings straight away. Use a "under construction" gimmick
+rare items (blacklight, users can trade outside game, but only one can use)
+
+---------------------------------------- assets done
+tools (bolt, saw, watering-can, --------- hammer, tape measure, wrench, screwdriver, plank, nails, ...)
+matches (particle effect for fire)
+fishing pole (some silly fish things out of pond game)
+
+button
+flail
+galleon
+radio
+robot
+slide-door
+slot-machine
+switch
+tree
+look at gallery (bike, stove, ant, chess, robotus, stegosaurus, tape measure, etc)
+
+---------------------------------------- other
+gumball machine with giant coins, turn key, giant balls that bounce after
+bowling
+bow and arrow
+room with harry potter dark wizard dummy a wand and a instructions manual (plates like lego one with coil binding them).
+chainsaw
+simplified accordion (just enough buttons as controllers)
+guitar
+create tape measure (add a few blocks so I can measure them)
+fan with speed knob
+lock and key - when picked by handle, key is properly positioned and snaps to keyhole, then it can be turned to open something
+vynil player
+pinching for small items
+aquarium room
+bag with items - grab icon and release it to materialize - grab behind back to get backpack
+create watch menu
+pluck grid and view waves spreading in vr - move wave generators, create barriers
+tardis
+one room/painting per thing - why complicate it? maybe auto generated corridors given modules, maybe just general layout in blender - inside each can be a different room though which is not a problem, it's part of creating the thing
+throw ball, move airplane with hand, then replay the experience from that perspective
+vr working cell with scale dependent details and time. paramecium swimming (match footage) to individual atoms. Ribosome making protein with stylized parts as a scale model, add details up and down the scale from there.
+teleport
+monitor mirror view of headset
+water can + timelapse plant (grow, give fruit and die)
+small buggy to move around faster
+stegosaurus with matching wood grains
+make the planet round, when crowded I can create another planet
+library with real books, maybe a comfy chair and light
+sims build mode (walls, windows, stairs, doors, furniture, etc) - maybe bake lights it after I apply changes so it looks really nice
+origami
+virtual watch with menu options
+use whiteboard
+museum of models with no interaction, could have some animation (tazo gallery for instance)
+desktop with virtual screen and mouse (maybe to choose where to go, or what model to view)
+display public information (redesign site like reddit, wikipedia, sketchfab, etc for vr)
+two handed long sword
+bomb disposal robot (stretchy controller halves like gun, slow, threads, simple obstacles, picture in picture, antennas(controller and car), lego wheels, flexible halves, overwrite buttons while held, neck moves to match hand...)
+low poly bike with physics and white world ramps or maybe 2d path with bumps and you can turn the pedals and so on
+cleaning (broom, hose, scraper, rag, mop)
+create 3d widgets demonstration, color picker, checkboxes, type selector (like numbers), text, control sphere in the wireframe box (cut outside), button to add object at random, select sphere by clicking it, change radius, position, color (checkboxes, sliders, text fields (with 3d text), color picker, ...) - with it's own raw text format (like html/svg)
+playground geography (skyscraper with elevator, paintings, islands, ...)
+locomotion without controllers (grab virtual controllers? smart watch?)
+typewriter
+scissors and paper (draw and cut + origami?)
+other crafts
+michelangelo?
+mm machines (simon, turing machine, ...)
+small train I can board and drive with tracks, coal, shovel, steam, whistle, breaks, ...
+portculis - gear operated something that I can use. drawbridge?
+periscope
+hanoi
+math and measurement room (calculator, tape measure, whiteboard with marker, compass, level, ruler, ...)
+emmiter and receiver in a 2d wave ground
+mechanisms/vr ui
+mock mechanics
+it would make sense to integrate kairon for extra power, but I need a better way to input text
+garden of timelapse lowpoly plants, flowers swaying grass etc
+basic circuit - resistor, soldering iron, voltimeter, lamp, breadboard, wires, maybe even arduino, ...
+boat
+made up electronic devices in the style of the calculator
+light saber
+harry potter wand
+splash paint
+musical room - instruments adapted to vr, giant strings you can grab and pluck, drum with sticks, piano for hands, vynil player etc
+piano
+cannon/catapult
+feed turtle
+mathematical 3d geometric proof
+music machine like the one from video (but simplified), hand cranked
+walking robotus with sword attacks
+walk around water wheel with realistic low poly water physics
+create complicated mechanical thing with 3 blades and chain, on/off button
+silk screen machine (roll, conveyor belt, animation or interactive?)
+create tiny interactive island, walk around, shake tree to dislodge coconuts, tiny wooden dock with a boat you can sail
+pask furniture, especially roll up box
+cabinet with drawers, doors, compartments etc
+sewing machine
+kniting machine
+fish reel
+lathe
+door with lock and button
+box hinge with latch, objects inside
+two gears
+keypad with 4 buttons (animation motion on track)
+musical instruments (guitar, piano)
+rotary phone
+virtual tablet/phone (fake screen with a couple of textures or real screen) - mirror real phone?
+washing machine
+fan
+stove with realistic flames
+combustion engine
+generator (stator, bearings, magnets)
+radio
+balls - saber, any direction, sound warning, maybe redirect instead of cut
+
+---------------------------------------- done
+calculator
+tiles game
+rubiks cube
+lego
+clock with hands and alarm

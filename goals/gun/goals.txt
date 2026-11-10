@@ -1,0 +1,18 @@
+
+
+-------------------------------------------------- later
+create gun model
+create trigger
+fire ball when trigger is pressed
+
+-------------------------------------------------- done
+
+X do introductory experience again
+X release handles
+X normalize handle position
+X fix blender
+X find position of ball sockets
+
+X place gun along line of ball sockets
+X center gun on first socket
+X add offset

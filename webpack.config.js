@@ -9,6 +9,7 @@ module.exports = {
   devServer: {
     hot: true,
     liveReload: true,
+    port: 3000,
     https: {
       key: fs.readFileSync('key.pem'),
       cert: fs.readFileSync('cert.pem'),

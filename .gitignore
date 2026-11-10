@@ -4,3 +4,4 @@ actions.json
 view.json
 cert.pem
 key.pem
+*.blend1

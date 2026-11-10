@@ -1,0 +1,53 @@
+
+
+----------------------------------------- later
+------------------------------------------ done
+
+X why is red slow
+X why can't I see then center of the cube?
+X fix lag (investigate number of objects in threejs, maybe use depth maps and simpler geometry)
+X fix red spots
+
+X get face objects
+X create empty rotator
+X rotate face
+X rotate face animation
+X stop animation at 90 degrees
+X apply rotation (rotate another face)
+X shadows
+X fix second rotation bug
+
+X fix flashing
+X implement cube scrambling (state.actions array, pop action and run it until actions is empty)
+X remove missteps
+X restore cube
+
+X grab cube
+
+X fix rotation of red layer
+X rotate red and blue simultaneously
+
+X test red layer at other places
+X place red layer at the right position given first hand
+X place structure around real cube
+X make parts children of rotating layer
+X place parts at layer properly
+
+X reset before playing
+X print when hands released
+X implement transferchild
+X show and hide axis with key
+X transfer children when two hands detected
+X find angle mod 90
+X integrate rest of cube code
+X angles are wrong after scramble
+
+X create grabParts, releaseParts for old cube (use transferchild?)
+X start snap animation from current angle to closest to mod 90
+X fix -90 and fix 180
+X rotate faster in vr
+X sounds
+X integrate todos
+X remove test module
+
+X don't try to scramble again while scrambling

@@ -1,0 +1,100 @@
+
+------------------------------------------ later
+------------------------------------------ done
+
+X find model
+X create project (from tamagochi)
+X move machinery to index.js
+X record and replay controller button presses
+
+X use hand rotation
+X fix missing hand animation
+X use or not avatar/groups depending if it is vr
+X grab cube
+X start with scene
+X hide vr button
+X grab calculator
+X save and restore view
+X update actions to save rotation instead and remove extra code
+X reset scene with backspace
+X controller movement
+
+X move buttons up and down
+X add finger tips to hands
+X make buttons avoid finger tips
+X vibrate when button is pressed
+X play sound when button is pressed
+X create other tip
+X record left hand too
+X clean up code
+X create playground project
+X commit
+
+X delete object held by hand on scene restart
+X do other calculator buttons
+X print values of the buttons
+X fix multiple presses
+X update calculator text
+X record full operation
+X print value of text (does javascript have eval?)
+X create digit texture to see if it's good enough
+X draw pixel
+X draw digit (5x7)
+X update display with text
+
+X create lid
+X holes around buttons
+X on button
+X display on and off
+X press buttons with mouse
+X move buttons when mouse pressed
+X fix arrow not working
+X fix dot display
+X implement cursor
+X draw cursor
+X make cursor blink
+X reboot button movement
+X backup code
+
+X reboot it
+X calculator shadows (including self)
+X fix moire patterns
+X add shadows to tiles
+X use second row
+X create equals symbol
+X if display ends in =, clear before entering new stuff
+X deal with division by 0
+X turn screen off after n seconds
+X feet
+X shiny display, maybe a layer of glass on top
+X texture info on the lid (useful data instead of calculator stuff, log tables, logarithms, calculus)
+
+X create batteries lid with screw
+X speaker
+X don't use premade colors
+
+X create lid logo
+
+X create environment light
+X better light/materials (especially for calculator)
+X use improvements (transferchild, sound, gethandposition) - tiles too
+X better yellow (less bright)
+X buttons making noise when calculator turned off with lid
+X button getting stuck if I pull hand too fast
+X fix the cursor hiding the number problem (try blinking with timer and reverse colors)
+X refactor code
+X refactor display and result texts (at least names and start of updateDisplay)
+
+X maybe go back on the hdr thing? (worse shadows, colors are off, reflection in vr looks cheap)
+X test simple 2 animation combinations (use bones)
+X save transforms for all bones, all frames
+X create third pose
+X implement separate hand fingers
+X go from 0 to 1 on left press, 0 to 2 on right press, back to 0 on release
+X move hand to index
+
+X don't use getObjectByName to get hand
+X fix plus turning on the display
+X only press if hand is poking to avoid accidentally pressing (hide/move tip on press?)
+X move tips from calculator
+X hide tips

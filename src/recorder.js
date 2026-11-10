@@ -2,8 +2,9 @@ import * as index from './index.js'
 
 let recording = false
 let actions = []
+let playing = false
 
-export function toggle () {
+export function toggleRecording () {
   recording = !recording
 
   if (recording) {
@@ -35,25 +36,49 @@ export function log (type, event) {
   }
 }
 
-export function playback () {
-  if (!recording) {
+function doActions (actions) {
+  if (actions.length > 0 && playing) {
+    let action = actions.pop()
+    setTimeout(() => {
+      let controller = scene.getObjectByName(action.hand + '_controller')
+      controller.position.copy(action.position)
+      controller.rotation.copy(action.rotation)
+
+      if (action.type === 'buttonPressed') {
+        index.buttonPressed(action.hand, action.button)
+      }
+      else if (action.type === 'buttonReleased') {
+        index.buttonReleased(action.hand, action.button)
+      }
+
+      doActions(actions)
+    }, action.time)
+  }
+  else {
+    playing = false
+  }
+}
+
+export function togglePlayback () {
+  if (playing) {
+    playing = false
+    console.log('stopped playback')
+  }
+  else {
+    playing = true
     fetch('/get-actions')
       .then(response => response.json())
-      .then(result => {
-        for (let action of result) {
-          setTimeout(() => {
-            let controller = scene.getObjectByName(action.hand + '_controller')
-            controller.position.copy(action.position)
-            controller.rotation.copy(action.rotation)
-
-            if (action.type === 'buttonPressed') {
-              index.buttonPressed(action.hand, action.button)
-            }
-            else if (action.type === 'buttonReleased') {
-              index.buttonReleased(action.hand, action.button)
-            }
-          }, action.time)
+      .then(actions => {
+        for (let i = actions.length - 1; i > 0; i--) {
+          actions[i].time = actions[i].time - actions[i - 1].time
         }
+
+        actions.reverse()
+        doActions(actions)
       })
   }
+}
+
+export function isPlaying () {
+  return playing
 }
