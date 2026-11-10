@@ -17,8 +17,9 @@ let gadget = null
 export async function init () {
   player.init()
   const name = new URLSearchParams(location.search).get('gadget') || 'calculator'
-  gadget = await gadgets[name]()
-  await gadget.init()
+  const loaded = await gadgets[name]()
+  await loaded.init()
+  gadget = loaded
   console.log(`world init: ${name}`)
 }
 
