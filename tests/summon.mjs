@@ -14,20 +14,28 @@ async function handTo (page, side, target) {
   await page.frames(3)
 }
 
-// Raises the left wrist, presses the watch with the right index finger, and
-// puts both hands back down
+// Raises the left wrist, touches the watch with the right index fingertip,
+// and puts both hands back down
 async function tapWatch (page) {
   await page.hand('left', [-0.05, 1.25, -0.25], [0, -60, -90])
   await page.hand('right', [0.2, 1.2, -0.2], [-30, 30, 0])
-  await page.press('right', 'squeeze')
-  await page.tipTo('right', await page.pointOn('face', [0, 0.03, 0]))
-  await page.tipTo('right', await page.pointOn('face', [0, 0, 0]))
-  await page.frames(8)
-  await page.tipTo('right', await page.pointOn('face', [0, 0.05, 0]))
-  await page.release('right', 'squeeze')
+  await page.tipTo('right', await page.pointOn('touch', [0, 0.1, 0]))
+  await page.tipTo('right', await page.pointOn('touch', [0, 0.01, 0]))
+  await page.frames(3)
+  await page.tipTo('right', await page.pointOn('touch', [0, 0.15, 0]))
   await page.hand('left', [-0.3, 0.9, 0], [0, 0, 0])
   await page.hand('right', [0.25, 1.0, 0], [0, 0, 0])
   await page.frames(15)
+}
+
+// Passing 6 cm from the watch must not open the menu
+async function passNearWatch (page) {
+  await page.hand('left', [-0.05, 1.25, -0.25], [0, -60, -90])
+  await page.hand('right', [0.2, 1.2, -0.2], [-30, 30, 0])
+  await page.tipTo('right', await page.pointOn('touch', [0, 0.06, 0]))
+  await page.frames(5)
+  await page.hand('right', [0.25, 1.0, 0], [0, 0, 0])
+  await page.hand('left', [-0.3, 0.9, 0], [0, 0, 0])
 }
 
 // World position of a menu copy (slot -> pivot)
@@ -38,6 +46,8 @@ export default async function (page) {
   (await import('fs')).mkdirSync('/tmp/scen', {recursive: true})
   await page.enterVR()
   await page.head([0, 1.6, 0], [-25, 0, 0])
+  await passNearWatch(page)
+  console.log('after passing near (closed)', JSON.stringify(await info(page)))
   await tapWatch(page)
   console.log('after tap', JSON.stringify(await info(page)))
   await page.wait(1500)

@@ -3,15 +3,16 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import * as util from './util.js'
 import * as hand from './hand.js'
 
-// The watch on the left wrist. Its face is a round button: pressing it with
-// the right index finger (grip squeezed, trigger free, as on the calculator)
-// opens and closes the gadget menu.
+// The watch on the left wrist. Touching its face with the right index
+// fingertip (any hand pose) opens and closes the gadget menu. The tip has to
+// come close, and go well away again before the next touch counts, so
+// passing near it does nothing.
 //
 // For now the model is made here: the calculator's yellow ON/C button on a
 // plain band. Felipe will model the real watch later; createModel is the
 // only part to replace. It must return the watch (placed in the left
-// controller's grip space) with a child that moves when pressed, `face`,
-// and inside it a hidden mesh, `zone`, that the fingertip has to enter.
+// controller's grip space) with a child that dips when touched, `face`, and
+// an empty object at the top of the face, `touch`, where the fingertip goes.
 
 // Where the watch sits in the left grip's space, found by looking at the hand
 // model in the emulator: the forearm runs along `forearm`, and the back of the
@@ -23,12 +24,13 @@ const BAND_RADIUS = [0.024, 0.036]    // across the wrist: back-palm, side-side
 const BAND_WIDTH = 0.022
 const FACE_DIAMETER = 0.03
 const FACE_TURN = -Math.PI / 2
-const TRAVEL = 0.004                  // how far the face goes in when pressed
-const STEP = 0.0012                   // per frame
+const TOUCH = 0.035                   // fingertip this near the face: a touch
+const AWAY = 0.08                     // and this far before the next one
+const DIP = 0.003                     // how far the face dips on a touch
 
-let watch, face, zone
+let watch, face, touch
 let depth = 0
-let pressed = false
+let armed = true
 
 async function createModel () {
   const group = new THREE.Group()
@@ -72,8 +74,11 @@ async function createModel () {
   button.castShadow = true
   faceGroup.add(holder)
 
-  collision.name = 'zone'
-  collision.visible = false
+  collision.removeFromParent()
+  const touchPoint = new THREE.Object3D()
+  touchPoint.name = 'touch'
+  touchPoint.position.y = size.y * scale
+  faceGroup.add(touchPoint)
 
   return group
 }
@@ -81,7 +86,7 @@ async function createModel () {
 export async function create () {
   watch = await createModel()
   face = watch.getObjectByName('face')
-  zone = watch.getObjectByName('zone')
+  touch = watch.getObjectByName('touch')
 
   // Group y along the forearm, group z out of the back of the hand
   const y = FOREARM.clone()
@@ -92,23 +97,24 @@ export async function create () {
   avatar.controllers.left.add(watch)
 }
 
-// Moves the face in or out with the fingertip; true on the frame it clicks
+// True on the frame the face is touched
 export function update () {
   if (!watch) {
     return false
   }
-  const tip = hand.isPointing('right') ? hand.getTipPosition('right') : null
-  const inside = tip && util.isInsideObject(zone, tip)
-  depth = util.within(depth + (inside ? STEP : -STEP), 0, TRAVEL)
+  depth = Math.max(0, depth - DIP / 8)
   face.position.y = -depth
 
-  if (!pressed && depth > TRAVEL * 0.6) {
-    pressed = true
+  const distance = hand.getTipPosition('right')
+    .distanceTo(touch.getWorldPosition(new THREE.Vector3()))
+  if (armed && distance < TOUCH) {
+    armed = false
+    depth = DIP
     util.pulse('right', 0.6, 40)
     return true
   }
-  if (pressed && depth < TRAVEL * 0.3) {
-    pressed = false
+  if (!armed && distance > AWAY) {
+    armed = true
   }
   return false
 }

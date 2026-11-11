@@ -41,14 +41,40 @@ async function tabs () {
 
 shell('am', 'force-stop', 'com.gilleece.moonlightxr.debug')
 
-execFileSync(adb, ['-s', quest, 'forward', `tcp:${devtoolsPort}`,
-                   'localabstract:chrome_devtools_remote'])
-for (const tab of await tabs()) {
-  await fetch(`http://localhost:${devtoolsPort}/json/close/${tab.id}`)
+// The window with the focus, e.g. com.oculus.vrshell/...HomeActivity
+const focused = () => shell('dumpsys', 'window').match(/mCurrentFocus=Window\{\S+ \S+ (\S+)\}/)?.[1] || ''
+
+// Closing Moonlight switches the headset to its home environment, and a
+// browser opened during the switch can end up hidden behind it (seen in the
+// log on 2026-11-11). So wait for home to take the focus first.
+for (let i = 0; i < 20 && !focused().includes('vrshell'); i++) {
+  await sleep(250)
+}
+await sleep(500)
+
+async function openTab () {
+  execFileSync(adb, ['-s', quest, 'forward', `tcp:${devtoolsPort}`,
+                     'localabstract:chrome_devtools_remote'])
+  for (const tab of await tabs()) {
+    await fetch(`http://localhost:${devtoolsPort}/json/close/${tab.id}`)
+  }
+  shell('am', 'start', '-a', 'android.intent.action.VIEW', '-d', url, 'com.oculus.browser')
 }
 
-shell('am', 'start', '-a', 'android.intent.action.VIEW', '-d', url, 'com.oculus.browser')
-console.log(`Opened ${url} on the Quest`)
+// And if it still doesn't come to the front, open it again
+for (let attempt = 1; attempt <= 3; attempt++) {
+  await openTab()
+  let shown = false
+  for (let i = 0; i < 12 && !shown; i++) {
+    await sleep(250)
+    shown = focused().includes('com.oculus.browser')
+  }
+  if (shown) {
+    console.log(`Opened ${url} on the Quest`)
+    break
+  }
+  console.log(`The browser didn't come to the front (focus: ${focused()}), trying again`)
+}
 
 // The devtools socket may only appear once the browser has started
 execFileSync(adb, ['-s', quest, 'forward', `tcp:${devtoolsPort}`,

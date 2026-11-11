@@ -21,7 +21,6 @@ export const gadgets = [
     label: 'Calculator',
     model: 'calculator/calculator.glb',
     root: 'base',
-    menuTurn: [90, 0, 0],
     load: () => import('./calculator/calculator.js'),
   },
   {
@@ -29,7 +28,6 @@ export const gadgets = [
     label: 'Tiles',
     model: 'tiles/tiles.glb',
     root: 'box',
-    menuTurn: [90, 0, 0],
     load: () => import('./tiles/tiles.js'),
   },
   {
