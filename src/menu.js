@@ -14,7 +14,6 @@ const DROP = 0.22            // below the eyes
 const SPACING = 0.3          // between slots, radians around the head
 const REACH = 0.07           // how near a hand has to be to a copy
 const PUT_AWAY_REACH = 0.16  // and to the arc to put a gadget away
-const TILT = THREE.MathUtils.degToRad(40)
 
 // Model files are fetched once, for the copies here and the gadgets later
 THREE.Cache.enabled = true
@@ -50,12 +49,9 @@ export async function create () {
     slot.rotation.y = -angle
     group.add(slot)
 
-    // Tipped towards the eyes, so flat things show their tops
-    const tilt = new THREE.Group()
-    tilt.rotation.x = TILT
-    slot.add(tilt)
+    // Turns about the vertical
     const pivot = new THREE.Group()
-    tilt.add(pivot)
+    slot.add(pivot)
     pivot.add(mini)
     mini.position.set(0, 0, 0)
     mini.updateMatrixWorld(true)
@@ -120,6 +116,10 @@ export function toggle () {
     group.rotation.set(0, Math.atan2(-forward.x, -forward.z), 0)
     group.visible = true
   }
+}
+
+export function close () {
+  open = false
 }
 
 export function center () {

@@ -1,6 +1,7 @@
 
 
 --------------------------------- later
+rebuild toolbox (wall of tools I can pick?), lego, other things, look at gallery
 think about physics
 reboot
 create simple corridor with single door

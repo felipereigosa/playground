@@ -98,6 +98,12 @@ const summoning = {left: null, right: null}
 
 async function summon (side, slot) {
   summoning[side] = slot
+  // The copy's pose now, before the menu closes and shrinks it
+  slot.mini.updateMatrixWorld(true)
+  const copy = slot.mini.matrixWorld.clone()
+  const upright = slot.pivot.parent.getWorldQuaternion(new THREE.Quaternion())
+    .multiply(slot.mini.quaternion)
+  menu.close()
   const gadget = await spawn(slot.name)
   const stillHeld = summoning[side] === slot
   summoning[side] = null
@@ -110,8 +116,7 @@ async function summon (side, slot) {
   }
   const root = gadget.root
   scene.add(root)
-  slot.mini.updateMatrixWorld(true)
-  slot.mini.matrixWorld.decompose(root.position, root.quaternion, root.scale)
+  copy.decompose(root.position, root.quaternion, root.scale)
   const startScale = root.scale.x
   if (stillHeld) {
     grab.take(side, gadget)
@@ -119,14 +124,12 @@ async function summon (side, slot) {
 
   // In the space of the hand (or the world, if let go already): the copy's
   // pose, the point held (the hand, or the gadget's origin), and the turn it
-  // ends at, which is the copy's without its spin, tipped towards the eyes
+  // ends at, which is the copy's without its spin
   const startPosition = root.position.clone()
   const startQuaternion = root.quaternion.clone()
   const anchor = stillHeld ? new THREE.Vector3() : startPosition.clone()
   const held = anchor.clone().sub(startPosition)
     .applyQuaternion(startQuaternion.clone().invert()).divideScalar(startScale)
-  const upright = slot.pivot.parent.getWorldQuaternion(new THREE.Quaternion())
-    .multiply(slot.mini.quaternion)
   const endQuaternion = root.parent.getWorldQuaternion(new THREE.Quaternion())
     .invert().multiply(upright)
   gadget.growing = true
