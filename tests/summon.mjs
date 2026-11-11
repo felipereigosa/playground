@@ -6,6 +6,7 @@ const info = page => page.eval(`(() => {
   let real = null; scene.traverse(o => { if (o.userData.gadget) real = o })
   const shown = scene.getObjectByName('menu').children.filter(slot => slot.scale.x > 0.5).length
   return {open: menu.isOpen(), shown, held: grab.heldIn('right')?.name || null,
+    gap: +scene.getObjectByName('menu').children.at(-1).scale.x.toFixed(2),
     real: real && {name: real.userData.gadget, scale: +real.scale.x.toFixed(3), parent: real.parent.name || real.parent.type}}
 })()`)
 
@@ -54,30 +55,46 @@ export default async function (page) {
   await page.wait(1500)
   await page.shot('/tmp/scen/f1.png')
 
+  // take the calculator out as an icon
   await handTo(page, 'right', await copy(page, 0))
   await page.press('right', 'squeeze')
-  await page.frames(4)
-  await page.shot('/tmp/scen/f2.png')
   await page.wait(600)
-  console.log('after summon (menu closed)', JSON.stringify(await info(page)))
-  await page.hand('right', [0.12, 1.35, -0.35], [-20, 0, 0])
+  await page.shot('/tmp/scen/f2.png')
+  console.log('icon in hand', JSON.stringify(await info(page)))
+
+  // let it go away from the menu: the menu closes and it grows there
+  await page.hand('right', [0.4, 1.35, -0.35], [0, 0, 0])
+  await page.frames(10)
+  console.log('carried away (spot closed)', JSON.stringify(await info(page)))
+  await page.release('right', 'squeeze')
+  await page.wait(600)
+  console.log('let go away', JSON.stringify(await info(page)))
   await page.shot('/tmp/scen/f3.png')
 
-  await page.hand('right', [0.4, 1.35, -0.35], [0, 0, 0])
-  await page.release('right', 'squeeze')
-  await page.wait(300)
-  console.log('after drop', JSON.stringify(await info(page)))
-
-  // reopen the menu, pick the calculator up again, let go on the menu
+  // with the menu open again, pick it up: it shrinks to an icon; carry it
+  // to the right end of the arc, where a spot opens, and let go there
   await tapWatch(page)
   const pos = await page.eval(`(() => { let r; scene.traverse(o => { if (o.userData.gadget) r = o }); return r.getWorldPosition(new THREE.Vector3()).toArray() })()`)
   await handTo(page, 'right', pos)
   await page.press('right', 'squeeze')
-  console.log('regrab', JSON.stringify(await info(page)))
-  await handTo(page, 'right', await copy(page, 1))
-  await page.release('right', 'squeeze')
-  await page.frames(4)
+  await page.wait(500)
+  console.log('picked up with menu open', JSON.stringify(await info(page)))
+  const rightEnd = await page.eval(`scene.getObjectByName('menu').localToWorld(
+    new THREE.Vector3(Math.sin(0.3) * 0.4, -0.22, -Math.cos(0.3) * 0.4)).toArray()`)
+  await handTo(page, 'right', rightEnd)
+  await page.frames(20)
+  console.log('at the right end', JSON.stringify(await info(page)))
   await page.shot('/tmp/scen/f4.png')
+  await page.release('right', 'squeeze')
+  await page.frames(6)
+  await page.shot('/tmp/scen/f45.png')   // landing: one calculator only
+  console.log('landing: copy hidden', await page.eval(`!scene.getObjectByName('menu').children
+    .find(slot => slot.userData.name === 'calculator').children[0].children[0].visible`))
   await page.wait(800)
+  await page.shot('/tmp/scen/f5.png')
   console.log('after put away', JSON.stringify(await info(page)))
+  console.log('arc order', await page.eval(`scene.getObjectByName('menu').children
+    .filter(slot => slot.userData.name && slot.scale.x > 0.5)
+    .sort((a, b) => a.position.x - b.position.x)
+    .map(slot => slot.userData.name).join(', ')`))
 }

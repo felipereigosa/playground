@@ -91,70 +91,89 @@ function gadgetOf (object) {
   return null
 }
 
-// Grabbing a small copy in the menu: the gadget (made now, or brought from
-// wherever it is) appears where the copy was and grows to full size in the
-// hand, keeping the point the hand closed on in the hand
-// The slot each hand is summoning from, cleared if the hand lets go before
-// the gadget is ready, in which case it grows where the copy was instead
-const summoning = {left: null, right: null}
+// Icons. With the menu open, gadgets are handled at the size of its copies:
+// closing a hand on a copy takes the gadget out as an icon (the gadget
+// itself, made now and shrunk to the copy's size), and grabbing a gadget in
+// the world shrinks it to one. An icon's own behaviour is paused. Letting an
+// icon go in the menu's empty spot puts it away there; anywhere else closes
+// the menu, and the gadget grows to full size where it was let go.
 
-async function summon (side, slot) {
-  summoning[side] = slot
-  // The copy's pose now, before the menu closes and shrinks it
-  slot.mini.updateMatrixWorld(true)
-  const copy = slot.mini.matrixWorld.clone()
-  const upright = slot.pivot.parent.getWorldQuaternion(new THREE.Quaternion())
-    .multiply(slot.mini.quaternion)
-  menu.close()
-  const gadget = await spawn(slot.name)
-  const stillHeld = summoning[side] === slot
-  summoning[side] = null
-  if (gadget.leaving) {
-    return
-  }
-  const holder = grab.holder(gadget)
-  if (holder) {
-    grab.drop(holder)
-  }
+// Changes a gadget's size over a moment, keeping the point at `anchor` (in
+// the space of its parent when this starts) where it is, even if the gadget
+// changes hands or is let go meanwhile
+function resize (gadget, toScale, anchor, seconds, done) {
   const root = gadget.root
-  scene.add(root)
-  copy.decompose(root.position, root.quaternion, root.scale)
-  const startScale = root.scale.x
-  if (stillHeld) {
-    grab.take(side, gadget)
-  }
-
-  // In the space of the hand (or the world, if let go already): the copy's
-  // pose, the point held (the hand, or the gadget's origin), and the turn it
-  // ends at, which is the copy's without its spin
-  const startPosition = root.position.clone()
-  const startQuaternion = root.quaternion.clone()
-  const anchor = stillHeld ? new THREE.Vector3() : startPosition.clone()
-  const held = anchor.clone().sub(startPosition)
-    .applyQuaternion(startQuaternion.clone().invert()).divideScalar(startScale)
-  const endQuaternion = root.parent.getWorldQuaternion(new THREE.Quaternion())
-    .invert().multiply(upright)
-  gadget.growing = true
-
+  const parent = root.parent
+  const fromScale = root.scale.x
+  const held = anchor.clone().sub(root.position)
+    .applyQuaternion(root.quaternion.clone().invert()).divideScalar(fromScale)
   animate(t => {
-    const k = smooth(Math.min(t / 0.35, 1))
-    const scale = THREE.MathUtils.lerp(startScale, gadget.scale, k)
+    if (gadget.leaving) {
+      return true
+    }
+    const k = smooth(Math.min(t / seconds, 1))
+    const scale = THREE.MathUtils.lerp(fromScale, toScale, k)
     root.scale.setScalar(scale)
-    root.quaternion.slerpQuaternions(startQuaternion, endQuaternion, k)
-    // Keeps the point held where the hand is
-    root.position.copy(anchor)
-      .sub(held.clone().multiplyScalar(scale).applyQuaternion(root.quaternion))
+    const point = parent.localToWorld(anchor.clone())
+    const world = point.sub(held.clone().multiplyScalar(scale)
+      .applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion())))
+    root.position.copy(root.parent.worldToLocal(world))
     if (k === 1) {
-      gadget.growing = false
+      done?.()
       return true
     }
   })
 }
 
-// Letting go of a gadget in the open menu: it shrinks into its slot and goes
+// While a hand's icon is being made: a token, cleared if the hand lets go
+// meanwhile, in which case the icon is let go as soon as it exists
+const taking = {left: null, right: null}
+
+async function takeIcon (side, slot) {
+  const token = {}
+  taking[side] = token
+  slot.mini.updateMatrixWorld(true)
+  const copy = slot.mini.matrixWorld.clone()
+  menu.setOut(slot.name, true)
+  const gadget = await spawn(slot.name)
+  gadget.icon = true
+  copy.decompose(gadget.root.position, gadget.root.quaternion, gadget.root.scale)
+  if (taking[side] === token) {
+    taking[side] = null
+    grab.take(side, gadget)
+  }
+  else {
+    letGoIcon(gadget, hand.getPosition(side))
+  }
+}
+
+// A gadget grabbed in the world while the menu is open shrinks into an icon
+function shrinkToIcon (side, gadget) {
+  gadget.icon = true
+  resize(gadget, menu.iconScale(gadget.name), new THREE.Vector3(), 0.25)
+}
+
+// An icon let go (already out of the hand) at this position
+function letGoIcon (gadget, position) {
+  const slot = menu.slotForPutAway(gadget.name, position)
+  if (slot) {
+    putAway(gadget, slot)
+    return
+  }
+  menu.close()
+  gadget.growing = true
+  resize(gadget, gadget.scale, position, 0.35, () => {
+    gadget.icon = false
+    gadget.growing = false
+  })
+}
+
+// Into the menu's empty spot: it turns and shrinks from how it was held onto
+// its copy there (hidden and still until then), and goes
 function putAway (gadget, slot) {
   gadget.leaving = true
   menu.setOut(gadget.name, false)
+  menu.arriving(gadget.name, true, gadget.root.getWorldQuaternion(new THREE.Quaternion()))
   grab.forget(gadget)
   const root = gadget.root
   const from = {
@@ -163,7 +182,7 @@ function putAway (gadget, slot) {
     scale: root.scale.x,
   }
   animate(t => {
-    const k = smooth(Math.min(t / 0.3, 1))
+    const k = smooth(Math.min(t / 0.25, 1))
     slot.mini.updateMatrixWorld(true)
     const to = {
       position: new THREE.Vector3(),
@@ -176,6 +195,7 @@ function putAway (gadget, slot) {
     root.scale.setScalar(THREE.MathUtils.lerp(from.scale, to.scale.x, k))
     if (k === 1) {
       despawn(gadget)
+      menu.arriving(gadget.name, false)
       return true
     }
   })
@@ -186,15 +206,19 @@ export function buttonPressed (side, button) {
     const position = hand.getPosition(side)
     const slot = menu.slotAt(position)
     if (slot) {
-      summon(side, slot)
+      takeIcon(side, slot)
       return
     }
     const hit = util.getObjectAt(position)
     const gadget = gadgetOf(hit)
-    if (gadget?.leaving) {
+    if (gadget?.leaving || gadget?.growing) {
       return
     }
     grab.pressed(side, hit, gadget)
+    // Picked up whole (not by a part) with the menu open
+    if (menu.isOpen() && gadget && grab.heldIn(side) === gadget && !gadget.icon) {
+      shrinkToIcon(side, gadget)
+    }
   }
   else {
     grab.gadgetOfHand(side)?.module.buttonPressed?.(side, button)
@@ -203,13 +227,13 @@ export function buttonPressed (side, button) {
 
 export function buttonReleased (side, button) {
   if (button === 'grab') {
-    summoning[side] = null
+    if (taking[side]) {
+      taking[side] = null
+      return
+    }
     const dropped = grab.released(side)
-    if (dropped && menu.isOpen()) {
-      const slot = menu.slotForPutAway(dropped.name, hand.getPosition(side))
-      if (slot) {
-        putAway(dropped, slot)
-      }
+    if (dropped?.icon) {
+      letGoIcon(dropped, hand.getPosition(side))
     }
   }
   else {
@@ -225,10 +249,12 @@ export function update () {
       gadgets.forEach(gadget => gadget.load())
     }
   }
-  menu.update()
+  menu.update(['left', 'right']
+    .filter(side => grab.heldIn(side)?.icon || taking[side])
+    .map(side => hand.getPosition(side)))
   runAnimations()
   for (const gadget of instances.values()) {
-    if (!gadget.leaving) {
+    if (!gadget.leaving && !gadget.icon) {
       gadget.module.update?.()
     }
   }

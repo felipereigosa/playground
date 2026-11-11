@@ -1,7 +1,9 @@
 // Every gadget that can be summoned from the watch. The module is only loaded
 // when the gadget is summoned; the menu shows a small copy of its model, the
 // object named `root` in `model` (the first object in it when not given),
-// turned by `menuTurn` (degrees about x, y, z) so its face points at you.
+// turned by `menuTurn` (degrees about x, y, z) so its face points at you,
+// and made `menuScale` times its usual menu size, to even the icons out by
+// eye.
 //
 // A gadget module exports:
 //   create()                 builds the gadget, returns its root object
@@ -21,6 +23,7 @@ export const gadgets = [
     label: 'Calculator',
     model: 'calculator/calculator.glb',
     root: 'base',
+    menuScale: 1.2,
     load: () => import('./calculator/calculator.js'),
   },
   {
