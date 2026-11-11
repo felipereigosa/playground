@@ -68,6 +68,7 @@ async function spawn (name) {
   root.userData.gadget = name
   const gadget = {name, module, root, scale: root.scale.x}
   instances.set(name, gadget)
+  menu.setOut(name, true)
   scene.add(root)
   return gadget
 }
@@ -77,6 +78,7 @@ function despawn (gadget) {
   gadget.root.removeFromParent()
   gadget.module.dispose?.()
   instances.delete(gadget.name)
+  menu.setOut(gadget.name, false)
 }
 
 function gadgetOf (object) {
@@ -152,6 +154,7 @@ async function summon (side, slot) {
 // Letting go of a gadget in the open menu: it shrinks into its slot and goes
 function putAway (gadget, slot) {
   gadget.leaving = true
+  menu.setOut(gadget.name, false)
   grab.forget(gadget)
   const root = gadget.root
   const from = {

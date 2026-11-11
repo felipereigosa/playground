@@ -4,7 +4,8 @@ export const query = ''
 
 const info = page => page.eval(`(() => {
   let real = null; scene.traverse(o => { if (o.userData.gadget) real = o })
-  return {open: menu.isOpen(), held: grab.heldIn('right')?.name || null,
+  const shown = scene.getObjectByName('menu').children.filter(slot => slot.scale.x > 0.5).length
+  return {open: menu.isOpen(), shown, held: grab.heldIn('right')?.name || null,
     real: real && {name: real.userData.gadget, scale: +real.scale.x.toFixed(3), parent: real.parent.name || real.parent.type}}
 })()`)
 
