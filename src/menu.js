@@ -49,17 +49,25 @@ export async function create () {
     slot.rotation.y = -angle
     group.add(slot)
 
-    // Turns about the vertical
-    const pivot = new THREE.Group()
-    slot.add(pivot)
-    pivot.add(mini)
+    // The copy is turned so its face points at the viewer, then fitted and
+    // centred in the pivot, which turns it about the vertical. Measured in a
+    // group of its own, so the slot's place doesn't count.
     mini.position.set(0, 0, 0)
-    mini.updateMatrixWorld(true)
+    if (gadget.menuTurn) {
+      const turn = new THREE.Euler(...gadget.menuTurn.map(THREE.MathUtils.degToRad))
+      mini.quaternion.premultiply(new THREE.Quaternion().setFromEuler(turn))
+    }
+    const measure = new THREE.Group()
+    measure.add(mini)
+    measure.updateMatrixWorld(true)
     const box = new THREE.Box3().setFromObject(mini)
     const size = box.getSize(new THREE.Vector3())
     const fit = MINI_SIZE / Math.max(size.x, size.y, size.z)
     mini.scale.multiplyScalar(fit)
     mini.position.copy(box.getCenter(new THREE.Vector3()).multiplyScalar(-fit))
+    const pivot = new THREE.Group()
+    slot.add(pivot)
+    pivot.add(mini)
 
     slot.add(backing())
     slot.add(label(gadget.label))
