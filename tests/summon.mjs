@@ -16,15 +16,23 @@ async function handTo (page, side, target) {
   await page.frames(3)
 }
 
-// Raises the left wrist, touches the watch with the right index fingertip,
-// and puts both hands back down
-async function tapWatch (page) {
+// Raises the left wrist, pushes the watch's button with the right index
+// fingertip, pointing (grab held, trigger not) unless told not to, and puts
+// both hands back down
+async function tapWatch (page, point = true) {
   await page.hand('left', [-0.05, 1.25, -0.25], [0, -60, -90])
   await page.hand('right', [0.2, 1.2, -0.2], [-30, 30, 0])
+  if (point) {
+    await page.press('right', 'squeeze')
+  }
   await page.tipTo('right', await page.pointOn('touch', [0, 0.1, 0]))
-  await page.tipTo('right', await page.pointOn('touch', [0, 0.01, 0]))
-  await page.frames(3)
+  await page.tipTo('right', await page.pointOn('touch', [0, -0.003, 0]))
+  await page.frames(8)
   await page.tipTo('right', await page.pointOn('touch', [0, 0.15, 0]))
+  await page.frames(8)
+  if (point) {
+    await page.release('right', 'squeeze')
+  }
   await page.hand('left', [-0.3, 0.9, 0], [0, 0, 0])
   await page.hand('right', [0.25, 1.0, 0], [0, 0, 0])
   await page.frames(15)
@@ -50,6 +58,8 @@ export default async function (page) {
   await page.head([0, 1.6, 0], [-25, 0, 0])
   await passNearWatch(page)
   console.log('after passing near (closed)', JSON.stringify(await info(page)))
+  await tapWatch(page, false)
+  console.log('after tap without pointing (closed)', JSON.stringify(await info(page)))
   await tapWatch(page)
   console.log('after tap', JSON.stringify(await info(page)))
   await page.wait(1500)

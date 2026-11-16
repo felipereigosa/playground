@@ -3,20 +3,27 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import * as util from './util.js'
 import * as hand from './hand.js'
 
-// The watch on the left wrist. Touching its face with the right index
-// fingertip (any hand pose with a controller, pointing with a tracked hand)
-// opens and closes the gadget menu. The tip has to
-// come close, and go well away again before the next touch counts, so
-// passing near it does nothing.
+// The watch on the left wrist. Pushing its button with the right index
+// fingertip while pointing (grab held and trigger not, on a controller; the
+// pointing pose, on a tracked hand) opens and closes the gadget menu, the
+// same rule as the calculator's keys, so a hand passing by does nothing.
+// It counts as soon as the tip gets into the button, and not again until the
+// tip has gone back up, above the face and AWAY from it: going too deep, or
+// pulling back out through the button, doesn't count twice. Like the
+// calculator's keys, the button sinks while the tip is in it and rises again
+// when it leaves.
 //
 // The model, assets/watch/watch.glb, is modelled in Blender around the hand
 // model and exported already in the left grip's space. Its `face` (the
-// button and star) dips along its parent's +y, which points out of the face,
+// button and star) sinks along its parent's -y (+y points out of the face),
 // and `touch`, an empty at the top of the face, is where the fingertip goes.
 
-const TOUCH = 0.035                   // fingertip this near the face: a touch
-const AWAY = 0.08                     // and this far before the next one
-const DIP = 0.003                     // how far the face dips on a touch
+const RADIUS = 0.03                   // the button's reach around its axis
+const ABOVE = 0.008                   // and above its top, for the tip
+const BELOW = 0.06                    // and how far below the top it goes
+const AWAY = 0.05                     // tip this far above it: ready again
+const TRAVEL = 0.005                  // how far the button goes down
+const STEP = TRAVEL / 4               // and how far it moves in a frame
 
 let watch, face, touch
 let depth = 0
@@ -52,27 +59,27 @@ export async function create () {
   avatar.controllers.left.add(watch)
 }
 
-// True on the frame the face is touched
+// True on the frame the button is pushed
 export function update () {
   if (!watch) {
     return false
   }
-  depth = Math.max(0, depth - DIP / 8)
+  const tip = face.parent.worldToLocal(hand.getTipPosition('right'))
+  const top = touch.position.y
+  const inside = hand.isPointing('right') &&
+    Math.hypot(tip.x, tip.z) < RADIUS &&
+    tip.y < top + ABOVE && tip.y > top - BELOW
+
+  depth = util.within(depth + (inside ? STEP : -STEP), 0, TRAVEL)
   face.position.y = -depth
 
-  // A tracked right hand has to be pointing, so a hand passing by in any
-  // other shape doesn't open the menu
-  const distance = hand.isTracked('right') && !hand.isPointing('right')
-    ? Infinity
-    : hand.getTipPosition('right')
-      .distanceTo(touch.getWorldPosition(new THREE.Vector3()))
-  if (armed && distance < TOUCH) {
+  if (armed && inside) {
     armed = false
-    depth = DIP
     util.pulse('right', 0.6, 40)
     return true
   }
-  if (!armed && distance > AWAY) {
+  if (!armed && tip.y > top &&
+      tip.distanceTo(new THREE.Vector3(0, top, 0)) > AWAY) {
     armed = true
   }
   return false
