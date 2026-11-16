@@ -22,7 +22,13 @@ function pollControllers () {
   const session = renderer.xr.getSession()
   if (session) {
     for (const source of session.inputSources) {
-      if (source.gamepad) {
+      // A tracked hand's gamepad (a pinch and the system's gestures) would
+      // come out as trigger, X and Y: hands work by gestures instead, see
+      // hand.track()
+      if (source.hand) {
+        oldState[source.handedness].axes = [0, 0]
+      }
+      else if (source.gamepad) {
         const controller = avatar.controllers[source.handedness]
         if (!controller.actuator) {
           controller.actuator = source.gamepad.hapticActuators[0]
@@ -66,6 +72,11 @@ async function init () {
   try {
     if (new URLSearchParams(location.search).has('emulate')) {
       (await import('./emulate.js')).install()
+    }
+    // The hand tracking demo instead of the playground
+    if (new URLSearchParams(location.search).has('hands')) {
+      (await import('./hands-demo.js')).start()
+      return
     }
 
     window.scene = new THREE.Scene()
@@ -126,14 +137,16 @@ async function init () {
       : Promise.resolve(false)
     xrSupported
       .then(isVR => {
-        leftController = isVR ? renderer.xr.getControllerGrip(0) : new THREE.Group()
+        // Moved every frame by hand.track() to the controller or tracked
+        // hand of its side
+        leftController = new THREE.Group()
         leftController.name = 'left_controller'
         leftController.velocityEstimator = new VelocityEstimator()
         avatar.add(leftController)
         avatar.controllers['left'] = leftController
         leftController.position.y = -1000
 
-        rightController = isVR ? renderer.xr.getControllerGrip(1) : new THREE.Group()
+        rightController = new THREE.Group()
         rightController.name = 'right_controller'
         rightController.velocityEstimator = new VelocityEstimator()
         avatar.add(rightController)
@@ -144,6 +157,7 @@ async function init () {
           avatar.position.y = 0
         }
         else {
+          hand.setupTracking()
           document.body.appendChild(VRButton.createButton(renderer))
           // On the headset a click anywhere on the page enters VR
           document.addEventListener('click', event => {
@@ -310,6 +324,11 @@ export function buttonReleased (side, button) {
 
 function render () {
   try {
+    if (entered) {
+      for (const {side, pressed} of hand.track()) {
+        pressed ? buttonPressed(side, 'grab') : buttonReleased(side, 'grab')
+      }
+    }
     renderer.render(scene, camera)
 
     // physics.fixedStep()

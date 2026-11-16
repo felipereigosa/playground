@@ -7,7 +7,8 @@
 //   page.eval(expression)        result of an expression in the page
 //   page.enterVR()               clicks ENTER VR (as a user gesture)
 //   page.head(position, euler)   moves the emulated headset
-//   page.hand(side, position, euler)
+//   page.hand(side, position, euler)   moves a controller, or a tracked hand
+//   page.handPose(side, pose)    tracked hands in a pose, null for controllers
 //   page.press(side, button) / page.release(side, button)
 //       button: trigger, squeeze, thumbstick, x-button, y-button,
 //       a-button, b-button
@@ -112,7 +113,7 @@ export async function open (query = '') {
       await page.eval(`(() => {
         const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(
           ...${JSON.stringify(euler)}.map(THREE.MathUtils.degToRad), 'YXZ'))
-        const c = xrDevice.controllers['${side}']
+        const c = (xrDevice.primaryInputMode === 'hand' ? xrDevice.hands : xrDevice.controllers)['${side}']
         c.position.set(...${JSON.stringify(position)})
         c.quaternion.set(q.x, q.y, q.z, q.w)
       })()`)
@@ -125,7 +126,7 @@ export async function open (query = '') {
         await page.eval(`(() => {
           const tip = hand.getTipPosition('${side}')
           const delta = new THREE.Vector3(...${JSON.stringify(target)}).sub(tip)
-          const p = xrDevice.controllers['${side}'].position
+          const p = (xrDevice.primaryInputMode === 'hand' ? xrDevice.hands : xrDevice.controllers)['${side}'].position
           p.set(p.x + delta.x, p.y + delta.y, p.z + delta.z)
         })()`)
         await page.frames(2)
@@ -139,6 +140,16 @@ export async function open (query = '') {
         return o.localToWorld(new THREE.Vector3(...${JSON.stringify(offset)})
           .divide(o.getWorldScale(new THREE.Vector3()))).toArray()
       })()`)
+    },
+    // Switches both sides to tracked hands in a pose ('default' is relaxed,
+    // 'point', 'fist', and the rest of xrDevice.hands.left.poseIds), or back
+    // to controllers with pose null
+    async handPose (side, pose) {
+      await page.eval(`(() => {
+        xrDevice.primaryInputMode = ${JSON.stringify(pose ? 'hand' : 'controller')}
+        if (${JSON.stringify(pose)}) xrDevice.hands['${side}'].poseId = ${JSON.stringify(pose)}
+      })()`)
+      await page.frames(3)
     },
     async press (side, button) {
       await page.eval(`xrDevice.controllers['${side}'].updateButtonValue('${button}', 1)`)

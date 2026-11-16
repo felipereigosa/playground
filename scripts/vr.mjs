@@ -12,7 +12,8 @@ import os from 'os'
 
 const adb = process.env.ADB || `${os.homedir()}/Android/platform-tools/adb`
 const devtoolsPort = 9333
-// Gadgets to have in front of you on arriving, e.g. `npm run vr calculator,cube`
+// Gadgets to have in front of you on arriving, e.g. `npm run vr calculator,cube`,
+// or `hands` (`hands:ar`) for the hand tracking demo
 const gadgets = process.argv[2] || ''
 
 const devices = execFileSync(adb, ['devices', '-l']).toString()
@@ -25,7 +26,10 @@ const shell = (...args) => execFileSync(adb, ['-s', quest, 'shell', ...args]).to
 
 const ip = Object.values(os.networkInterfaces()).flat()
   .find(a => a.family === 'IPv4' && !a.internal).address
-const url = `https://${ip}:8300/${gadgets ? '?gadget=' + gadgets : ''}`
+// `npm run vr hands` opens the hand tracking demo instead (`hands:ar` with
+// passthrough)
+const query = gadgets.startsWith('hands') ? '?' + gadgets.replace(':', '=') : gadgets ? '?gadget=' + gadgets : ''
+const url = `https://${ip}:8300/${query}`
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
