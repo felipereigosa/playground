@@ -31,14 +31,7 @@ export async function create () {
 
   state.rotator = rotator
   state.cube = cube
-  state.actions = []
   state.action = null
-
-  for (let child of cube.children) {
-    child.savedPosition = child.position.clone()
-    child.savedRotation = child.rotation.clone()
-  }
-  state.scrambled = false
 
   await player.load('cube/clack.ogg')
   return cube
@@ -77,7 +70,6 @@ function startRotation (direction) {
   state.rotator.rotation.set(0, 0, 0)
   state.rotator.direction = direction
   parts.forEach(part => state.rotator.add(part))
-  state.scrambled = true
 }
 
 function setAngle (angle) {
@@ -93,39 +85,6 @@ function endRotation () {
     util.transferChild(part, state.rotator, state.cube)
   }
   player.play('clack')
-}
-
-function toggleScramble () {
-  if (!state.action && state.actions.length === 0) {
-    if (state.scrambled) {
-      for (let child of state.cube.children) {
-        if (child !== state.rotator) {
-          child.position.copy(child.savedPosition)
-          child.rotation.copy(child.savedRotation)
-        }
-      }
-      state.scrambled = false
-    }
-    else {
-      while (state.actions.length < 10) {
-        const sign = Math.random() > 0.5 ? 1 : -1
-        const axis = Math.floor(Math.random() * 3)
-        const sign2 = Math.random() > 0.5 ? 1 : -1
-        const direction = new THREE.Vector3(axis === 0 ? sign2 : 0,
-                                            axis === 1 ? sign2 : 0,
-                                            axis === 2 ? sign2 : 0)
-        const lastAction = state.actions[state.actions.length - 1]
-        if (!lastAction ||
-            !(lastAction.direction.dot(direction) === 1 &&
-              lastAction.sign !== sign)) {
-          state.actions.push({direction,
-                              startAngle: 0,
-                              endAngle: sign * 90,
-                              rotateCube: true})
-        }
-      }
-    }
-  }
 }
 
 function startHandRotation () {
@@ -180,19 +139,6 @@ export function grabReleased (side) {
   state.twoHanded[side] = false
 }
 
-export function buttonPressed (side, button) {
-  if (button === 'trigger') {
-    toggleScramble()
-  }
-}
-
-function startAction () {
-  state.action = state.actions.shift()
-  let direction = state.action.direction
-  state.rotator.angle = state.action.startAngle
-  startRotation(direction)
-}
-
 function updateAction () {
   const startAngle = state.action.startAngle
   const endAngle = state.action.endAngle
@@ -210,13 +156,7 @@ function updateAction () {
 
 export function update () {
   if (state.action) {
-    if (state.action.rotateCube) {
-      ['x', 'y', 'z'].forEach(axis => state.cube.rotation[axis] += 0.01)
-    }
     updateAction()
-  }
-  else if (state.actions.length > 0) {
-    startAction()
   }
   else if (state.rotator.children.length === 9) {
     setHandAngle()

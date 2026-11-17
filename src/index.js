@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { VRButton } from 'three/addons/webxr/VRButton.js'
 import { VelocityEstimator } from "./velocity.js"
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as grab from './grab.js' // TEMPORARY, for the trace
 import * as util from './util.js'
 import * as world from './world'
 import * as hand from './hand.js'
@@ -37,6 +38,7 @@ function pollControllers () {
         for (let i = 0; i < 7; i++) {
           if (buttons[i] > 0.5 && oldState[source.handedness].buttons[i] < 0.5) {
             try {
+              traceButton(source.handedness, buttonNames[i])  // TEMPORARY
               buttonPressed(source.handedness, buttonNames[i])
             }
             catch (error) {
@@ -193,12 +195,56 @@ async function init () {
   }
 }
 
+const DEAD_ZONE = 0.3
+
+// TEMPORARY, parked 2026-11-17 until the walking sticks again (the left stick
+// read as pushed with nobody touching it; the cube scrambling by
+// itself was its trigger, since removed): window.trace, read with
+// scripts/quest-eval.mjs. One entry per
+// stretch of movement (what moved the player, for how long, the range of the
+// raw left stick during it, how far the player and a held or loose blaster
+// went) and one per button press, with what each hand held.
+const trace = window.trace = []
+let traceAvatar = null
+let traceRun = null
+const traceHeld = () => (grab.heldIn('left')?.name || '-') + '/' + (grab.heldIn('right')?.name || '-')
+function traceButton (side, button) {
+  const pad = [...(renderer.xr.getSession()?.inputSources || [])].find(s => s.handedness === side)?.gamepad
+  trace.push({t: Math.round(performance.now()), press: side + ' ' + button, held: traceHeld(),
+    buttons: pad ? pad.buttons.map(b => +b.value.toFixed(2)) : null})
+  if (trace.length > 3000) trace.shift()
+}
+function traceStep (step) {
+  if (step === 'frame') return
+  avatar.updateMatrixWorld()
+  const at = new THREE.Vector3().setFromMatrixPosition(avatar.matrixWorld)
+  const moved = traceAvatar ? at.distanceTo(traceAvatar) : 0
+  traceAvatar = at
+  if (moved <= 0.001) return
+  const now = Math.round(performance.now())
+  const left = [...(renderer.xr.getSession()?.inputSources || [])].find(s => s.handedness === 'left')
+  const raw = left?.gamepad ? [...left.gamepad.axes].slice(2) : [NaN, NaN]
+  if (!traceRun || traceRun.step !== step || now - traceRun.end > 60) {
+    traceRun = {t: now, end: now, step, frames: 0, moved: 0, x: [raw[0], raw[0]], y: [raw[1], raw[1]],
+      source: left ? (left.hand ? 'hand' : 'pad') : 'none', held: traceHeld()}
+    trace.push(traceRun)
+    if (trace.length > 3000) trace.shift()
+  }
+  traceRun.end = now
+  traceRun.frames++
+  traceRun.moved = +(traceRun.moved + moved).toFixed(2)
+  traceRun.x = [Math.min(traceRun.x[0], raw[0]), Math.max(traceRun.x[1], raw[0])].map(v => +v.toFixed(2))
+  traceRun.y = [Math.min(traceRun.y[0], raw[1]), Math.max(traceRun.y[1], raw[1])].map(v => +v.toFixed(2))
+}
+
 function move () {
   const direction = new THREE.Vector3()
   const [lx, lz] = getAxes("left")
   direction.set(lx, 0, lz)
 
-  if (direction.length() > 0.1) {
+  // A wide dead zone: a worn stick that doesn't come back to the middle
+  // shouldn't walk you off
+  if (direction.length() > DEAD_ZONE) {
     direction.applyEuler(camera.rotation)
     direction.applyEuler(avatar.rotation)
     direction.y = 0
@@ -333,10 +379,15 @@ function render () {
 
     // physics.fixedStep()
     pollControllers()
+    traceStep('frame')
     move()
+    traceStep('walk')
     turn()
+    traceStep('turn')
     adjustHeight()
+    traceStep('height')
     checkLying()
+    traceStep('lying')
 
     for (let side of ['right', 'left']) {
       hand.update(side)

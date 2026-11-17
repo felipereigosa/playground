@@ -3,7 +3,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const express = require('express');
 const bodyParser = require('body-parser');
-const { execFile, execFileSync } = require('child_process');
+const { execFile, execFileSync, spawn } = require('child_process');
 
 // The dev server runs on the laptop, whose adb reaches the Quest (wireless).
 const adb = process.env.ADB || `${process.env.HOME}/Android/platform-tools/adb`;
@@ -56,6 +56,16 @@ module.exports = {
                        '--es', 'Name', moonlightHost,
                        '--es', 'AppName', moonlightApp],
                  err => res.sendStatus(err ? 500 : 200));
+      });
+
+      // Into the game in VR, asked by Moonlight's left Y: the same as
+      // `npm run vr`, which closes Moonlight, so answer first
+      app.post('/vr', (req, res) => {
+        res.sendStatus(202);
+        const log = fs.openSync('/tmp/playground-vr.log', 'w');
+        const child = spawn(process.execPath, ['scripts/vr.mjs'],
+                            { detached: true, stdio: ['ignore', log, log] });
+        child.unref();
       });
 
       devServer.app.use(app);
