@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import * as util from '../util.js'
 import * as grab from '../grab.js'
+import * as effects from './effects.js'
+import {shots} from './sound.js'
 
 // The Tripo blaster, in two halves: rear (pistol grip, grip_back) and front
 // (foregrip, grip_front). It is only held by its grips (see grab.js). One
@@ -11,17 +13,22 @@ import * as grab from '../grab.js'
 // hand's roll, and a beam of light stretches between their sockets. When
 // either hand lets go, the half in the hand that stays turns back to that
 // hand's proper hold, about the hand, and the other half slides over to it.
-// The trigger of the hand on grip_back fires an energy pulse.
+// While the trigger of the hand on grip_back is held, it fires a stream of
+// energy bolts (see effects.js and sound.js).
 export const gripsOnly = true
 
 const REACH = 0.06          // metres from the free grip that the second hand takes it
 const BEAM_SINK = 0.02      // metres the beam reaches into each half
 const DOCK = 0.2            // seconds for the halves to slide back together and
                             // the gun to turn back to the hand's hold
-const PULSE_SPEED = 30      // metres per second
-const PULSE_LIFE = 1.5      // seconds
-const PULSE_TAIL = 0.35     // metres
-const FLASH_LIFE = 0.08     // seconds the muzzle plume lasts
+const RATE = 9             // shots per second while the trigger is held
+const BOLT_SPEED = 30       // metres per second
+const BOLT_LIFE = 1.5       // seconds
+const BOLT_TAIL = 0.5       // metres
+const BOLT_WIDTH = 0.03     // metres from the bolt's middle to the edge of its glow
+const PLUME_LENGTH = 0.2    // metres
+const PLUME_WIDTH = 0.035
+const FLARE_SIZE = 0.09
 const CYAN = 0x5ff4ff
 
 let state = null
@@ -51,7 +58,11 @@ export async function create () {
   }
   const beam = makeBeam()
   root.add(beam)
-  state = {root, rear, front, beam, stretch: null, docking: null, pulses: []}
+  const plume = effects.plume()
+  const flare = effects.flare()
+  scene.add(plume, flare)
+  state = {root, rear, front, beam, stretch: null, docking: null, bolts: [], plume, flare, heat: 0,
+    firing: null, sound: shots(root.getObjectByName('muzzle'))}
   return root
 }
 
@@ -86,8 +97,8 @@ function makeBeam () {
 }
 
 export function dispose () {
-  for (const pulse of state?.pulses || []) {
-    pulse.removeFromParent()
+  for (const object of [...(state?.bolts || []), state?.plume, state?.flare]) {
+    object?.removeFromParent()
   }
   state = null
 }
@@ -175,68 +186,59 @@ function endStretch (stays) {
 }
 
 export function buttonPressed (side, button) {
-  if (button !== 'trigger' || !state) {
-    return
-  }
-  const onBack = state.stretch ? state.stretch.back === side : grab.gripOf(side) === 'back'
-  if (onBack) {
-    fire(side)
+  if (button === 'trigger' && state && onBack(side)) {
+    state.firing = {side, next: performance.now()}
   }
 }
 
-// A cone along +y fading from white at its base to clear cyan at its tip
-function fade (radius, length) {
-  const geometry = new THREE.ConeGeometry(radius, length, 12, 4, true)
-  const position = geometry.attributes.position
-  const colors = []
-  const white = new THREE.Color(0xffffff)
-  const cyan = new THREE.Color(CYAN)
-  for (let i = 0; i < position.count; i++) {
-    const t = position.getY(i) / length + 0.5          // 0 base, 1 tip
-    const c = white.clone().lerp(cyan, Math.min(t * 4, 1))
-    colors.push(c.r, c.g, c.b, 0.9 * (1 - t) ** 2)
+export function buttonReleased (side, button) {
+  if (button === 'trigger' && state?.firing?.side === side) {
+    state.firing = null
   }
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4))
-  geometry.translate(0, length / 2, 0)                 // base at the origin
-  return new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-    vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide,
-  }))
 }
 
-// An energy pulse, as in First Steps: a short white-hot plume out of the
-// muzzle that fades at once, and a bright head with a fading tail that flies
-// off along the gun
-function fire (side) {
+function onBack (side) {
+  return state.stretch ? state.stretch.back === side : grab.gripOf(side) === 'back'
+}
+
+// While the trigger is held, a shot every 1 / RATE seconds; a hand that
+// lets go of the back grip stops it
+function updateFiring (now) {
+  const firing = state.firing
+  if (firing && !onBack(firing.side)) {
+    state.firing = null
+  }
+  if (state.firing) {
+    // Catch up at most one missed shot after a long frame
+    firing.next = Math.max(firing.next, now - 1000 / RATE)
+    while (now >= firing.next) {
+      fire(firing.side, now)
+      firing.next += 1000 / RATE
+    }
+  }
+}
+
+function muzzlePose () {
   const muzzle = state.root.getObjectByName('muzzle')
-  const from = muzzle.getWorldPosition(new THREE.Vector3())
-  const direction = new THREE.Vector3(0, 0, -1).transformDirection(state.front.matrixWorld)
-  const along = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction)
+  return {
+    from: muzzle.getWorldPosition(new THREE.Vector3()),
+    direction: new THREE.Vector3(0, 0, -1).transformDirection(state.front.matrixWorld),
+  }
+}
 
-  const flash = fade(0.022, 0.2)
-  flash.position.copy(from)
-  flash.quaternion.copy(along)
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 8),
-    new THREE.MeshBasicMaterial({color: CYAN, transparent: true, opacity: 0.6, depthWrite: false}))
-  flash.add(glow)
-  flash.userData = {flash: true, born: performance.now()}
-
-  const pulse = new THREE.Group()
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 8),
-    new THREE.MeshBasicMaterial({color: 0xffffff}))
-  const halo = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 8),
-    new THREE.MeshBasicMaterial({color: CYAN, transparent: true, opacity: 0.55, depthWrite: false}))
-  const tail = fade(0.012, PULSE_TAIL)
-  tail.rotation.x = Math.PI                            // trailing behind the head
-  pulse.add(tail, halo, head)
-  pulse.position.copy(from)
-  pulse.quaternion.copy(along)
-  pulse.userData = {direction, tail, born: performance.now()}
-  tail.scale.y = 0                                     // the tail grows out of the muzzle
-
-  scene.add(flash, pulse)
-  state.pulses.push(flash, pulse)
+// A bolt with a comet tail out of the muzzle, a kick to the plume and the
+// flare, the sound and a buzz in the hand
+function fire (side, now) {
+  const {from, direction} = muzzlePose()
+  const bolt = effects.bolt()
+  bolt.userData = {from, direction, born: now}
+  scene.add(bolt)
+  state.bolts.push(bolt)
+  state.lastShot = now
+  state.flare.material.rotation = Math.random() * Math.PI
+  state.sound()
   state.root.userData.shots = (state.root.userData.shots || 0) + 1
-  util.pulse(side, 0.7, 40)
+  util.pulse(side, 0.6, 30)
 }
 
 const _m = new THREE.Matrix4()
@@ -311,25 +313,33 @@ function updateBeam () {
   })
 }
 
-function updatePulses () {
+function updateShots () {
   const now = performance.now()
-  const dt = Math.min((now - (state.last ?? now)) / 1000, 0.05)
-  state.last = now
-  state.pulses = state.pulses.filter(pulse => {
-    const age = (now - pulse.userData.born) / 1000
-    if (age > (pulse.userData.flash ? FLASH_LIFE : PULSE_LIFE)) {
-      pulse.removeFromParent()
+  const time = now / 1000
+  updateFiring(now)
+  state.bolts = state.bolts.filter(bolt => {
+    const age = (now - bolt.userData.born) / 1000
+    if (age > BOLT_LIFE) {
+      bolt.removeFromParent()
+      bolt.material.dispose()
       return false
     }
-    if (pulse.userData.flash) {
-      const k = 1 - age / FLASH_LIFE
-      pulse.scale.set(k, 0.6 + 0.4 * k, k)
-      return true
-    }
-    pulse.position.addScaledVector(pulse.userData.direction, PULSE_SPEED * dt)
-    pulse.userData.tail.scale.y = Math.min(age * PULSE_SPEED / PULSE_TAIL, 1)
+    const travelled = age * BOLT_SPEED
+    const head = bolt.userData.from.clone().addScaledVector(bolt.userData.direction, travelled)
+    // The tail grows out of the muzzle
+    effects.placeBolt(bolt, head, bolt.userData.direction, Math.min(travelled, BOLT_TAIL), BOLT_WIDTH, time)
     return true
   })
+  // The plume burns while firing, flaring at each shot, and dies out fast
+  const kick = Math.exp(-(now - (state.lastShot ?? -1e9)) / 45)
+  const target = state.firing ? 0.7 + 0.5 * kick : 0
+  state.heat += (target - state.heat) * (target > state.heat ? 1 : 0.35)
+  const {from, direction} = muzzlePose()
+  effects.placePlume(state.plume, from, direction, PLUME_LENGTH * (0.75 + 0.45 * kick), PLUME_WIDTH,
+    state.heat, time)
+  state.flare.visible = state.heat > 0.01
+  state.flare.position.copy(from).addScaledVector(direction, 0.01)
+  state.flare.scale.setScalar(FLARE_SIZE * (0.5 + 0.8 * kick) * Math.min(state.heat, 1))
 }
 
 export function update () {
@@ -375,5 +385,5 @@ export function update () {
     }
   }
   updateBeam()
-  updatePulses()
+  updateShots()
 }

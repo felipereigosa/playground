@@ -31,3 +31,7 @@ export function play (name) {
   sound.stop()
   sound.play()
 }
+
+export function getListener () {
+  return listener
+}

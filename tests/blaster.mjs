@@ -1,7 +1,7 @@
 // The blaster's grips: summoned with ?gadget=blaster, a hand closing away
 // from its grips doesn't take it, the right hand takes it by grip_back and
 // the left by grip_front (mirrored), each snapping the grip onto the
-// controller; the back trigger fires; both hands pull the halves apart with
+// controller; holding the back trigger fires until let go; both hands pull the halves apart with
 // a beam between them, and either letting go docks them again:
 // node scripts/emulator.mjs tests/blaster.mjs
 export const query = 'gadget=blaster'
@@ -63,12 +63,21 @@ export default async function (page) {
   await page.frames(10)
   await page.shot('/tmp/scen/b1.png')
 
-  // Fire with the back hand's trigger: a pulse leaves the muzzle
+  // Hold the back hand's trigger: it keeps firing until let go
   await page.press('right', 'trigger')
-  await page.frames(2)
+  await page.eval(`new Promise(r => setTimeout(r, 700))`)
+  await page.frames(1)
+  await page.head([0.3, 1.45, 0.2], [-10, 70, 0])
+  await page.frames(1)
+  await page.shot('/tmp/scen/fire.png')
+  console.log('plume while held:', await page.eval(`(() => { let p; scene.traverse(o => { if (o.material?.uniforms?.uHeat) p = o }); return p.visible + ' heat ' + p.material.uniforms.uHeat.value.toFixed(2) })()`))
   await page.release('right', 'trigger')
-  await page.frames(4)
-  console.log('shots after docked trigger:', await page.eval(`${root}.userData.shots`))
+  await page.frames(2)
+  const held = await page.eval(`${root}.userData.shots`)
+  await page.eval(`new Promise(r => setTimeout(r, 400))`)
+  await page.frames(2)
+  console.log('shots while held ~0.8 s:', held, 'after letting go:', await page.eval(`${root}.userData.shots`))
+  await page.head([0, 1.6, 0.6], [-20, 0, 0])
 
   // Left hand on grip_front, mirrored: the halves part, beam between them
   await page.eval(moveTo('left', await page.eval(gripAt('front', 'left', [-0.02, 0, 0.02]))))
