@@ -4,8 +4,8 @@
 // whole file with `whole`). `model` is only used for that copy, so it can be
 // a file made just to be the icon (the Lego one);
 // turned by `menuTurn` (degrees about x, y, z) so its face points at you,
-// and made `menuScale` times its usual menu size, to even the icons out by
-// eye.
+// made `menuScale` times its usual menu size, to even the icons out by
+// eye, and raised by `menuLift` (metres) when its middle looks low.
 //
 // A gadget module exports:
 //   create()                 builds the gadget, returns its root object
@@ -82,6 +82,7 @@ export const gadgets = [
     name: 'table',
     label: 'Table',
     menuTurn: [18, 0, 0],      // tipped, or its copy would not be seen to turn
+    menuScale: 1.2,
     icon: async () => (await import('./table/table.js')).make(),
     load: () => import('./table/table.js'),
   },
@@ -97,6 +98,15 @@ export const gadgets = [
     model: 'lego/icon.glb',
     whole: true,
     load: () => import('./lego/lego.js'),
+  },
+  {
+    name: 'bowling',
+    label: 'Bowling',
+    model: 'bowling/bowling.glb',
+    root: 'bowling',
+    menuScale: 1.25,
+    menuLift: 0.012,
+    load: () => import('./bowling/bowling.js'),
   },
 ]
 

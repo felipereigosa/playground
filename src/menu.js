@@ -114,6 +114,7 @@ export async function create () {
     const fit = Math.min(MINI_SIZE / average, MINI_MAX / a) * (gadget.menuScale ?? 1)
     mini.scale.multiplyScalar(fit)
     mini.position.copy(box.getCenter(new THREE.Vector3()).multiplyScalar(-fit))
+    mini.position.y += gadget.menuLift ?? 0
     const pivot = new THREE.Group()
     slot.add(pivot)
     pivot.add(mini)
