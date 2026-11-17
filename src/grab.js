@@ -46,7 +46,7 @@ export function gripOf (side) {
 
 // The gadget's grips for a hand, each as {name, position, quaternion} of the
 // grip frame in the root's space, the root's scale left out
-function gripsFor (side, gadget) {
+export function gripsFor (side, gadget) {
   const result = []
   for (const child of gadget.root.children) {
     const match = child.name.match(/^grip_(.+?)(_left)?$/)
@@ -87,7 +87,9 @@ function gripNear (side, gadget) {
   return best
 }
 
-export function take (side, gadget, grip = null) {
+// slide false: the gadget stays where it is in the hand, still counted as
+// held by that grip
+export function take (side, gadget, grip = null, slide = true) {
   const from = holder(gadget)
   if (from) {
     held[from] = null
@@ -95,9 +97,10 @@ export function take (side, gadget, grip = null) {
   }
   util.transferChild(gadget.root, gadget.root.parent, avatar.controllers[side])
   held[side] = gadget
+  parts[side] = null
   grips[side] = grip?.name || null
   slides[side] = null
-  if (grip) {
+  if (grip && slide) {
     // The root's pose in the controller's space puts the grip on it
     const root = gadget.root
     const quaternion = grip.quaternion.clone().invert()
