@@ -253,6 +253,7 @@ export function update () {
     .filter(side => grab.heldIn(side)?.icon || taking[side])
     .map(side => hand.getPosition(side)))
   runAnimations()
+  grab.update()
   for (const gadget of instances.values()) {
     if (!gadget.leaving && !gadget.icon) {
       gadget.module.update?.()
