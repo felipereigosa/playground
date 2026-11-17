@@ -71,8 +71,17 @@ export const gadgets = [
     load: () => import('./gun/blaster.js'),
   },
   {
+    name: 'radio',
+    label: 'Radio',
+    model: 'radio/radio.glb',
+    root: 'radio',
+    menuTurn: [0, 180, 0],
+    load: () => import('./radio/radio.js'),
+  },
+  {
     name: 'table',
     label: 'Table',
+    menuTurn: [18, 0, 0],      // tipped, or its copy would not be seen to turn
     icon: async () => (await import('./table/table.js')).make(),
     load: () => import('./table/table.js'),
   },

@@ -48,6 +48,30 @@ module.exports = {
         });
       });
 
+      // The radio's stations (src/radio/sound.js): the audio files in
+      // assets/radio/music, which ship with the code, then those in
+      // assets/radio/private, which git ignores, for music of your own. A
+      // name that starts with a number on the dial (88 90 96 102 108 500
+      // 600 900) puts the station there.
+      app.get('/radio/stations.json', (req, res) => {
+        const list = [];
+        for (const folder of ['music', 'private']) {
+          let names = [];
+          try {
+            names = fs.readdirSync(`assets/radio/${folder}`).sort();
+          } catch (error) {}
+          for (const name of names) {
+            if (/\.(mp3|ogg|m4a|wav|flac)$/i.test(name)) {
+              list.push({
+                file: `radio/${folder}/${encodeURIComponent(name)}`,
+                at: Number(name.match(/^(\d+)[ _-]/)?.[1]) || null,
+              });
+            }
+          }
+        }
+        res.json(list);
+      });
+
       // Back to the laptop's desktop in Moonlight, called when leaving VR
       app.post('/desktop', (req, res) => {
         const serial = questSerial();

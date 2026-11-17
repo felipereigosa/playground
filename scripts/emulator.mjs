@@ -182,7 +182,7 @@ export async function open (query = '') {
 
 if (process.argv[1] === new URL(import.meta.url).pathname && process.argv[2]) {
   // A scenario that hangs (a frame wait with no VR session) ends here
-  setTimeout(() => { console.log('FAILED: timed out'); process.exit(1) }, 120000).unref()
+  setTimeout(() => { console.log('FAILED: timed out'); process.exit(1) }, Number(process.env.TIMEOUT) || 120000).unref()
   const scenario = await import(path.resolve(process.argv[2]))
   let page
   try {

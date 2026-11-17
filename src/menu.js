@@ -5,32 +5,38 @@ import { gadgets } from './gadgets.js'
 
 // The gadget menu the watch opens: a small copy of every gadget not out in
 // the world, on an arc in front of the chest, turning slowly, with its name
-// under it. Closing a hand on a copy takes the gadget out as an icon
+// under it. More than ONE_ROW of them stand in two rows, like a stepped
+// shelf: the first half above and further away, the rest below and nearer.
+// Closing a hand on a copy takes the gadget out as an icon
 // (world.js) and its entry off the arc. Carrying an icon near the arc opens
 // an empty spot at the place nearest the hand, the others sliding apart;
 // letting go there puts the gadget away into that spot, which is also how
-// the arc is reordered. The arc moves with the head (level; it keeps the
-// height it opened at) but not with its turning: it faces the way it opened
-// until the head is turned FOLLOW_TURN away, and then comes round in front.
+// the arc is reordered. The arc stays where it opened, in front of the
+// head as it was then: walking about the real room or turning the head
+// leaves it there. Moving with the sticks (walking, turning, crouching)
+// takes it along, as does anything else that moves the player's rig.
 
 const MINI_SIZE = 0.065      // the copies' sides average about this (m)
 const MINI_MAX = 0.115       // and none is longer than this
-const RADIUS = 0.4           // from the head
-const DROP = 0.22            // below the eyes
+const RADIUS = 0.4           // from the head, about
 const SPACING = 0.3          // between slots, radians around the head
+const ONE_ROW = 4            // more entries than this make two rows
+// Each row's distance from the head and drop below the eyes: [upper, lower]
+const ROW_RADIUS = [0.43, 0.36]
+const ROW_DROP = [0.16, 0.31]
 const REACH = 0.07           // how near a hand has to be to a copy
 const PUT_AWAY_REACH = 0.16  // and to the arc to put a gadget away
-const FOLLOW_TURN = 100      // degrees the head turns before the arc comes round
 
 // Model files are fetched once, for the copies here and the gadgets later
 THREE.Cache.enabled = true
 
 let group = null
 let open = false
-let following = false
-// In arc order: {name, slot, pivot, mini, scale, angle, out}, `out` while
-// the gadget is in the world, `angle` its place on the arc (radians), sliding
-// to its target
+let rig = null               // the player's rig (avatar) as it was last frame
+// In arc order: {name, slot, pivot, mini, scale, at, out}, `out` while
+// the gadget is in the world, `at` its place, sliding to its target:
+// {angle, row}, the angle round the head (radians) and the row, 0 the upper
+// and 1 the lower, or the only row at 0.5, in between
 const slots = []
 
 // The empty spot: where on the arc it is (index among the entries shown),
@@ -38,8 +44,25 @@ const slots = []
 let gap = null
 let gapSlot = null
 
-// Angle of place i of n on the arc, the arc centred in front
-const arcAngle = (i, n) => (i - (n - 1) / 2) * SPACING
+// Place i of n: one row centred in front, or two, the first half above
+function spot (i, n) {
+  if (n <= ONE_ROW) {
+    return {angle: (i - (n - 1) / 2) * SPACING, row: 0.5}
+  }
+  const above = Math.ceil(n / 2)
+  const row = i < above ? 0 : 1
+  const count = row ? n - above : above
+  // The same distance between neighbours in both rows
+  const spacing = SPACING * RADIUS / ROW_RADIUS[row]
+  return {angle: ((row ? i - above : i) - (count - 1) / 2) * spacing, row}
+}
+
+// Where a place is, in the menu's space
+function pointAt ({angle, row}) {
+  const radius = THREE.MathUtils.lerp(ROW_RADIUS[0], ROW_RADIUS[1], row)
+  const drop = THREE.MathUtils.lerp(ROW_DROP[0], ROW_DROP[1], row)
+  return new THREE.Vector3(Math.sin(angle) * radius, -drop, -Math.cos(angle) * radius)
+}
 
 export async function create () {
   group = new THREE.Group()
@@ -98,14 +121,14 @@ export async function create () {
     slot.add(backing())
     slot.add(label(gadget.label))
     slot.userData.name = gadget.name
-    slots.push({name: gadget.name, slot, pivot, mini, scale: 0, angle: null, out: false})
+    slots.push({name: gadget.name, slot, pivot, mini, scale: 0, at: null, out: false})
   }
 
   const empty = new THREE.Group()
   empty.add(backing())
   empty.add(label(''))
   group.add(empty)
-  gapSlot = {slot: empty, scale: 0, angle: null}
+  gapSlot = {slot: empty, scale: 0, at: null}
 }
 
 // A gadget being put away is flying onto its copy, which waits hidden and
@@ -146,10 +169,10 @@ export function setOut (name, out) {
   }
 }
 
-function place (slot, angle) {
-  slot.angle = angle
-  slot.slot.position.set(Math.sin(angle) * RADIUS, -DROP, -Math.cos(angle) * RADIUS)
-  slot.slot.rotation.y = -angle
+function place (slot, at) {
+  slot.at = at
+  slot.slot.position.copy(pointAt(at))
+  slot.slot.rotation.y = -at.angle
 }
 
 function backing () {
@@ -186,31 +209,14 @@ function label (text) {
   return plane
 }
 
-// Where the arc should be for the head now: under it, facing where it looks
-function headPlace () {
-  const head = camera.getWorldPosition(new THREE.Vector3())
-  const forward = camera.getWorldDirection(new THREE.Vector3())
-  return {head, turn: Math.atan2(-forward.x, -forward.z)}
-}
-
+// Moves the open menu the way the rig moved since last frame
 function follow () {
-  if (!open) {
-    following = false
-    return
+  avatar.updateMatrix()
+  const now = avatar.matrix.clone()
+  if (open && rig && !rig.equals(now)) {
+    group.applyMatrix4(now.clone().multiply(rig.invert()))
   }
-  const {head, turn} = headPlace()
-  group.position.x = head.x
-  group.position.z = head.z
-  const off = Math.atan2(Math.sin(turn - group.rotation.y), Math.cos(turn - group.rotation.y))
-  if (Math.abs(off) > THREE.MathUtils.degToRad(FOLLOW_TURN)) {
-    following = true
-  }
-  if (following) {
-    group.rotation.y += off * 0.12
-    if (Math.abs(off) < 0.05) {
-      following = false
-    }
-  }
+  rig = now
 }
 
 export function isOpen () {
@@ -236,7 +242,7 @@ export function close () {
 
 // The middle of the arc
 export function center () {
-  return group.localToWorld(new THREE.Vector3(0, -DROP, -RADIUS))
+  return group.localToWorld(pointAt({angle: 0, row: 0.5}))
 }
 
 function distanceTo (slot, position) {
@@ -267,12 +273,16 @@ function gapFor (position) {
   }
   const n = slots.filter(slot => !slot.out).length + 1
   const local = group.worldToLocal(position.clone())
-  const angle = Math.atan2(local.x, -local.z)
-  const index = THREE.MathUtils.clamp(Math.round(angle / SPACING + (n - 1) / 2), 0, n - 1)
-  const spot = arcAngle(index, n)
-  const near = local.distanceTo(new THREE.Vector3(
-    Math.sin(spot) * RADIUS, -DROP, -Math.cos(spot) * RADIUS)) < PUT_AWAY_REACH
-  return near ? index : null
+  let index = null
+  let nearest = PUT_AWAY_REACH
+  for (let i = 0; i < n; i++) {
+    const distance = local.distanceTo(pointAt(spot(i, n)))
+    if (distance < nearest) {
+      index = i
+      nearest = distance
+    }
+  }
+  return index
 }
 
 // Letting go of a gadget here: if that is in the empty spot, its entry moves
@@ -290,7 +300,7 @@ export function slotForPutAway (name, position) {
   slots.splice(before ? slots.indexOf(before) : slots.length, 0, slot)
   // It takes the spot's place (where the spot is heading), so it neither
   // flies in from its old one nor slides after landing
-  place(slot, arcAngle(index, shown.length + 1))
+  place(slot, spot(index, shown.length + 1))
   gap = null
   return slot
 }
@@ -311,10 +321,11 @@ export function update (carrying = []) {
     places.splice(gap, 0, gapSlot)
   }
   for (const [i, slot] of places.entries()) {
-    const angle = arcAngle(i, places.length)
-    place(slot, slot.angle === null || slot.scale < 0.01
-      ? angle
-      : slot.angle + (angle - slot.angle) * 0.2)
+    const to = spot(i, places.length)
+    place(slot, slot.at === null || slot.scale < 0.01
+      ? to
+      : {angle: slot.at.angle + (to.angle - slot.at.angle) * 0.2,
+         row: Math.abs(to.row - slot.at.row) < 0.005 ? to.row : slot.at.row + (to.row - slot.at.row) * 0.2})
   }
   gapSlot.scale += ((open && gap !== null ? 1 : 0) - gapSlot.scale) * 0.25
   gapSlot.slot.scale.setScalar(Math.max(gapSlot.scale, 0.001))

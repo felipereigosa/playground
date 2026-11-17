@@ -4,3 +4,4 @@ view.json
 cert.pem
 key.pem
 *.blend1
+assets/radio/private/
