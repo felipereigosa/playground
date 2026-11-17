@@ -1,0 +1,47 @@
+I'm designing a two-handed toy sci-fi blaster for my own VR game and I need concept art that I can model from in Blender. Please generate one image: a clean model sheet of the blaster.
+
+HOW THE BLASTER WORKS (this is the important part)
+It is made of two separate rigid halves joined by a stretchy glowing core.
+- Rear half: held in the right hand. It has a pistol grip with a big friendly trigger, and a rounded power pack at the back.
+- Front half: held in the left hand. It has a chunky vertical foregrip underneath and the muzzle at the front.
+- Docked: when the two halves are pushed together they nest into each other along a clear seam, with a visible step or interlocking shape so you can tell where it will split, and the whole thing reads as one compact, stubby blaster.
+- Stretched: when the player pulls their hands apart, the halves separate and a glowing energy barrel is revealed between them, like a taut tube of light held by a few evenly spaced floating rings. The barrel can be any length; the two halves themselves never change shape.
+
+WHAT TO DRAW
+A model sheet on a plain light grey studio background with three views of the same design:
+1. Top: strict side view (orthographic, facing right), docked.
+2. Middle: strict side view (orthographic, facing right), stretched to about double length, the glowing barrel and its rings clearly visible between the two halves.
+3. Bottom: a three-quarter hero view of the stretched blaster held by the two cartoon hands from the attached image, right hand on the rear grip with the index finger area on the trigger, left hand on the foregrip.
+The two side views must be the same scale and exactly consistent with each other, so I can trace them.
+
+STYLE
+- A designer toy / premium children's toy made of moulded plastic: chunky, friendly proportions, slightly oversized grips and trigger, soft rounded forms, generous bevels and fillets, smooth continuous curves.
+- Modern, sleek sci-fi, closer to a concept sneaker or a high-end gadget than to a military weapon. It should look fun and cool, not menacing. No resemblance to any real firearm.
+- NOT low poly: no faceting, no flat-shaded planes. Also NOT realistic: no screws, no tiny greebles, no engraved micro detail, no dirt, scratches or wear.
+- Few, large, readable shapes with a strong silhouette. Every part should be something I could build from a small number of smooth shapes. Detail comes from big panel splits, a couple of inset grooves, colour blocking and glowing elements, not from small parts.
+- It must match the attached hands: smooth, chunky white mitten hands with a red cap at the wrist. The grips need to be thick enough for those hands.
+
+COLOUR AND MATERIALS
+- Main shells: glossy warm white plastic.
+- Secondary: matte charcoal grey for the grips, the inner structure and the faces that get exposed where the halves separate.
+- Accents, used sparingly: bright red (matching the red of the hand's wrist cap), sunflower yellow for the trigger and one or two buttons.
+- Energy: a bright teal/cyan glow for the stretchy barrel, the rings, the muzzle and one or two thin light strips on the body.
+- Flat, saturated toy colours, soft studio lighting, soft contact shadows, no dramatic rim lights, no lens flare, no bloom washing out the shapes.
+
+DO NOT INCLUDE
+Text, labels, logos, numbers, arrows, callouts, background props, scenery, extra variants, cutaways or exploded views. Just the three views of the one design.
+
+
+----- follow-up for gun-concept-2.png -----
+
+Good base, and the colours on the body are right. Please make a new version of the same model sheet (same three views, same layout, same hands, same plain grey background, still no text) with these changes:
+
+1. Less cute, more cool. It is too rounded and bubbly. Keep it a premium toy with smooth surfaces and soft bevels, but give it a sleeker, faster, more designed silhouette: longer and lower, with a few crisp, confident lines and angled panel splits, slightly wedge-shaped, forward-leaning like a concept car or a sci-fi sports gadget. Flat-ish planes that meet in tight rounded edges instead of inflated balloon shapes. Still not low poly, still no greebles, still not a real firearm.
+
+2. The front half must look clearly different from the rear half. Right now it is as wide and blunt as the back. Make the front half slimmer and longer, tapering toward the muzzle, with a distinct nose: a narrower muzzle with a charcoal collar and a teal glowing ring, maybe a small fin or sight on top. The rear half stays the heavier one, with the red power pack. Front-to-back the gun should read as: heavy back, narrow pointed front.
+
+3. Better grips. Both are currently plain grey stubs. Give the rear pistol grip an ergonomic, raked-back shape with a sculpted back, a subtle flared base and a proper trigger guard that flows into the body. Give the foregrip its own different design: angled forward, with a shaped front edge and two or three wide, soft finger grooves or inset rubber pads, and a small red or yellow end cap. Both still chunky enough for the mitten hands.
+
+4. Redesign the stretchy barrel. Instead of a fat solid cyan tube, make it a slim, taut energy beam: a thin, very bright core line running between the two halves, inside a faint smoky-dark transparent sleeve, held by three or four thin charcoal rings whose inner edges glow teal. It should look powerful and precise, like contained plasma, and clearly thinner than the bodies. The charcoal sockets it plugs into on each half should look like engineered connectors.
+
+Keep: glossy warm white shells, matte charcoal secondary parts, red power pack, yellow trigger and button, thin teal light strips, and the stepped interlocking seam in the docked view. The two side views must again be the same scale and consistent with each other.

@@ -39,6 +39,13 @@ export const gadgets = [
     model: 'cube/cube.glb',
     load: () => import('./cube/cube.js'),
   },
+  {
+    name: 'blaster',
+    label: 'Blaster',
+    model: 'gun/blaster.glb',
+    root: 'blaster',
+    load: () => import('./gun/blaster.js'),
+  },
 ]
 
 export function find (name) {
