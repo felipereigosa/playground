@@ -73,7 +73,7 @@ export default async function (page) {
   console.log('icon in hand', JSON.stringify(await info(page)))
 
   // let it go away from the menu: the menu closes and it grows there
-  await page.hand('right', [0.4, 1.35, -0.35], [0, 0, 0])
+  await page.hand('right', [0.3, 1.0, -0.6], [0, 0, 0])
   await page.frames(10)
   console.log('carried away (spot closed)', JSON.stringify(await info(page)))
   await page.release('right', 'squeeze')

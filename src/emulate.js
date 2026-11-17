@@ -4,6 +4,7 @@ import * as hand from './hand.js'
 import * as grab from './grab.js'
 import * as world from './world.js'
 import * as menu from './menu.js'
+import * as hits from './hits.js'
 
 // Testing without the headset: ?emulate in the URL replaces the browser's
 // WebXR with Meta's emulator (IWER) pretending to be a Quest 2, so the page
@@ -15,5 +16,5 @@ export function install () {
   device.installRuntime({forceInstall: true})
   window.xrDevice = device
   // For the tests to look inside
-  Object.assign(window, {THREE, hand, grab, world, menu})
+  Object.assign(window, {THREE, hand, grab, world, menu, hits})
 }

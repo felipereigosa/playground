@@ -8,6 +8,10 @@ import { characterMap } from './character_map.js'
 // One calculator at a time, so its state can live in the module
 let state = null
 
+// On a surface it lies on its back, the top edge raised to face whoever
+// put it there (world.js)
+export const rest = {up: [0, 1, 0], top: [0, 0, -1], tilt: 20}
+
 export async function create () {
   state = {}
 
@@ -15,7 +19,7 @@ export async function create () {
   const gltf = await loader.loadAsync('calculator/calculator.glb')
   const base = gltf.scene.getObjectByName('base')
   state.base = base
-  base.scale.setScalar(0.2)
+  base.scale.setScalar(0.16)
   base.rotation.x = util.toRadians(30)
   base.castShadow = true
 

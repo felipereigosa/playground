@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import * as util from '../util.js'
 import * as grab from '../grab.js'
 import * as effects from './effects.js'
+import * as hits from '../hits.js'
 import {shots} from './sound.js'
 
 // The Tripo blaster, in two halves: rear (pistol grip, grip_back) and front
@@ -16,6 +17,7 @@ import {shots} from './sound.js'
 // While the trigger of the hand on grip_back is held, it fires a stream of
 // energy bolts (see effects.js and sound.js).
 export const gripsOnly = true
+export const falls = true
 
 const REACH = 0.06          // metres from the free grip that the second hand takes it
 const BEAM_SINK = 0.02      // metres the beam reaches into each half
@@ -326,6 +328,14 @@ function updateShots () {
     }
     const travelled = age * BOLT_SPEED
     const head = bolt.userData.from.clone().addScaledVector(bolt.userData.direction, travelled)
+    // Whatever it strikes on the way reacts (hits.js) and the bolt ends there
+    const last = bolt.userData.head || bolt.userData.from
+    if (hits.cast(last, head, 'blaster')) {
+      bolt.removeFromParent()
+      bolt.material.dispose()
+      return false
+    }
+    bolt.userData.head = head
     // The tail grows out of the muzzle
     effects.placeBolt(bolt, head, bolt.userData.direction, Math.min(travelled, BOLT_TAIL), BOLT_WIDTH, time)
     return true

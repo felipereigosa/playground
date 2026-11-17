@@ -1,0 +1,25 @@
+I'm designing shooting targets for my own VR game and I need concept art that I can model from in Blender. Please generate one image: a clean model sheet of one target.
+
+WHAT THE TARGET IS
+A floating target for a toy sci-fi blaster, about 40 cm across. It is an octagonal shell, slightly convex toward the shooter like a shallow shield or a turtle shell, with a thin charcoal back. Its front is divided into concentric octagonal rings, each ring a separate raised panel in a different colour with a thin dark groove between rings, and a small centre plate as the bullseye. When it is hit, the ring that was struck glows and the rings push outward slightly, so the rings should look like separate pieces that could move apart a little.
+
+WHAT TO DRAW
+A model sheet on a plain light grey studio background with four views of the same design:
+1. Strict front view (orthographic), at rest.
+2. Strict side view (orthographic), at rest, showing how shallow the dome is and the thin back.
+3. A three-quarter view at rest.
+4. A three-quarter view just after a hit: one ring glowing brightly, all the rings spread slightly apart with light in the grooves between them.
+The front and side views must be the same scale and consistent with each other, so I can trace them.
+
+STYLE
+- A designer toy / premium children's toy made of moulded plastic: chunky, soft bevels, smooth surfaces, tight rounded edges.
+- Modern, sleek toy sci-fi, like a high-end gadget. Fun and cool, not military.
+- NOT low poly and NOT realistic: no screws, no tiny greebles, no dirt, scratches or wear.
+- Few, large, readable shapes. Detail comes from the ring splits, colour blocking and the glow, not from small parts.
+
+COLOUR AND MATERIALS
+- It belongs with a blaster that is glossy warm white with matte charcoal parts, bright red and sunflower yellow accents and a teal/cyan energy glow. Use that palette: rings in white, red, yellow and teal in an order that reads well from far away, a charcoal rim and back, and cyan light in the grooves when hit.
+- Flat, saturated toy colours, soft studio lighting, soft contact shadows, no lens flare, no bloom washing out the shapes.
+
+DO NOT INCLUDE
+Text, labels, logos, numbers, arrows, callouts, stands, posts, background props, scenery or extra variants. Just the four views of the one design.

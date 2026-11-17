@@ -270,6 +270,9 @@ let thumb = false
 function turn () {
   const value = getAxes('right')[0]
   const angleSize = util.toRadians(45)
+  if (heightTarget !== 0) {
+    return
+  }
   if (value > 0.9 && !thumb) {
     thumb = true
     rotateAroundHead(-angleSize)
@@ -283,27 +286,43 @@ function turn () {
   }
 }
 
-let thumb2 = false
+// The right stick pulled down past HEIGHT_PUSH crouches by CROUCH metres,
+// pushed up rises by RISE, easing there, and stays until the stick is let
+// go, when the height comes back. For reaching the floor without bending,
+// lying down above all. A push that is more sideways than up or down is a
+// turn only, and a stick that has turned doesn't change the height until it
+// is let go, nor the other way round.
+const CROUCH = 0.5
+const RISE = 1.0
+const HEIGHT_PUSH = 0.7     // of the stick's travel, to start
+const HEIGHT_RELEASE = 0.3  // and under this, in any direction, it is let go
+let heightTarget = 0
+let heightOffset = 0
+
 function adjustHeight () {
-  const value = getAxes('right')[1]
-  if (value > 0.9 && !thumb2) {
-    thumb2 = true
-    avatar.position.y = util.within(avatar.position.y - 0.5, -0.5, 11.5)
+  const [x = 0, y = 0] = getAxes('right')   // down is positive
+  if (heightTarget !== 0) {
+    if (Math.hypot(x, y) < HEIGHT_RELEASE) {
+      heightTarget = 0
+    }
   }
-  else if (value < -0.9 && !thumb2) {
-    thumb2 = true
-    avatar.position.y = util.within(avatar.position.y + 0.5, -0.5, 11.5)
+  else if (!thumb && Math.abs(y) > HEIGHT_PUSH && Math.abs(y) > Math.abs(x)) {
+    heightTarget = y > 0 ? -CROUCH : RISE
   }
-  else if (value === 0) {
-    thumb2 = false
-  }
+  const next = Math.abs(heightTarget - heightOffset) < 0.001
+    ? heightTarget
+    : heightOffset + (heightTarget - heightOffset) * 0.15
+  avatar.position.y += next - heightOffset
+  heightOffset = next
 }
 
 // Lying down: turns the world so that "up" is wherever the top of the head
 // points now and the eyes look level, and puts the head just in front of the
-// current gadget. Floor and grid are hidden, leaving the sky. Left X does it
-// any time, and it happens by itself on entering VR with the head tilted
-// more than 45 degrees.
+// current gadget, LYING_HEAD above the floor: low, as if sitting on it, so
+// that the arms reach what has fallen. The room is as when standing: things
+// fall towards the feet. Left X does it any time, and it happens by itself
+// on entering VR with the head tilted more than 45 degrees.
+const LYING_HEAD = 1.1
 let framesUntilLyingCheck = 0
 
 function alignToHead () {
@@ -315,14 +334,13 @@ function alignToHead () {
   const headTarget = target
     ? target.add(new THREE.Vector3(0, 0.15, 0.45))
     : headNow
+  headTarget.y = LYING_HEAD
 
   avatar.quaternion.copy(camera.quaternion).invert()
   const headOffset = camera.position.clone().applyQuaternion(avatar.quaternion)
   avatar.position.copy(headTarget).sub(headOffset)
-
-  for (const name of ['ground', 'grid']) {
-    scene.getObjectByName(name).visible = false
-  }
+  heightOffset = 0
+  heightTarget = 0
 }
 
 function checkLying () {

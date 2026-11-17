@@ -9,7 +9,9 @@ import { gadgets } from './gadgets.js'
 // (world.js) and its entry off the arc. Carrying an icon near the arc opens
 // an empty spot at the place nearest the hand, the others sliding apart;
 // letting go there puts the gadget away into that spot, which is also how
-// the arc is reordered.
+// the arc is reordered. The arc moves with the head (level; it keeps the
+// height it opened at) but not with its turning: it faces the way it opened
+// until the head is turned FOLLOW_TURN away, and then comes round in front.
 
 const MINI_SIZE = 0.065      // the copies' sides average about this (m)
 const MINI_MAX = 0.115       // and none is longer than this
@@ -18,12 +20,14 @@ const DROP = 0.22            // below the eyes
 const SPACING = 0.3          // between slots, radians around the head
 const REACH = 0.07           // how near a hand has to be to a copy
 const PUT_AWAY_REACH = 0.16  // and to the arc to put a gadget away
+const FOLLOW_TURN = 100      // degrees the head turns before the arc comes round
 
 // Model files are fetched once, for the copies here and the gadgets later
 THREE.Cache.enabled = true
 
 let group = null
 let open = false
+let following = false
 // In arc order: {name, slot, pivot, mini, scale, angle, out}, `out` while
 // the gadget is in the world, `angle` its place on the arc (radians), sliding
 // to its target
@@ -45,10 +49,15 @@ export async function create () {
 
   const loader = new GLTFLoader()
   for (const [i, gadget] of gadgets.entries()) {
-    const gltf = await loader.loadAsync(gadget.model)
-    const model = gadget.root
-      ? gltf.scene.getObjectByName(gadget.root)
-      : gltf.scene.children[0]
+    // A gadget without a model file makes its own (`icon` in gadgets.js)
+    const gltf = gadget.icon ? null : await loader.loadAsync(gadget.model)
+    const model = gadget.icon
+      ? await gadget.icon()
+      : gadget.whole
+        ? gltf.scene
+        : gadget.root
+          ? gltf.scene.getObjectByName(gadget.root)
+          : gltf.scene.children[0]
     const mini = model.clone()
     mini.traverse(child => {
       if (child.name.startsWith('collision')) {
@@ -177,6 +186,33 @@ function label (text) {
   return plane
 }
 
+// Where the arc should be for the head now: under it, facing where it looks
+function headPlace () {
+  const head = camera.getWorldPosition(new THREE.Vector3())
+  const forward = camera.getWorldDirection(new THREE.Vector3())
+  return {head, turn: Math.atan2(-forward.x, -forward.z)}
+}
+
+function follow () {
+  if (!open) {
+    following = false
+    return
+  }
+  const {head, turn} = headPlace()
+  group.position.x = head.x
+  group.position.z = head.z
+  const off = Math.atan2(Math.sin(turn - group.rotation.y), Math.cos(turn - group.rotation.y))
+  if (Math.abs(off) > THREE.MathUtils.degToRad(FOLLOW_TURN)) {
+    following = true
+  }
+  if (following) {
+    group.rotation.y += off * 0.12
+    if (Math.abs(off) < 0.05) {
+      following = false
+    }
+  }
+}
+
 export function isOpen () {
   return open
 }
@@ -264,6 +300,7 @@ export function update (carrying = []) {
   if (!gapSlot) {   // still being made
     return
   }
+  follow()
   gap = carrying.map(gapFor).find(index => index !== null) ?? null
 
   // The entries on the arc, with the empty spot if there is one, spread
