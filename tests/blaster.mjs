@@ -70,12 +70,15 @@ export default async function (page) {
   await page.head([0.3, 1.45, 0.2], [-10, 70, 0])
   await page.frames(1)
   await page.shot('/tmp/scen/fire.png')
+  const slid = `(() => { const t = ${root}.getObjectByName('trigger'); return t.parent.name + ' z ' + (t.position.z * 1000).toFixed(1) + ' mm' })()`
+  console.log('trigger while held: under', await page.eval(slid))
   console.log('plume while held:', await page.eval(`(() => { let p; scene.traverse(o => { if (o.material?.uniforms?.uHeat) p = o }); return p.visible + ' heat ' + p.material.uniforms.uHeat.value.toFixed(2) })()`))
   await page.release('right', 'trigger')
   await page.frames(2)
   const held = await page.eval(`${root}.userData.shots`)
   await page.eval(`new Promise(r => setTimeout(r, 400))`)
   await page.frames(2)
+  console.log('trigger after letting go: under', await page.eval(slid))
   console.log('shots while held ~0.8 s:', held, 'after letting go:', await page.eval(`${root}.userData.shots`))
   await page.head([0, 1.6, 0.6], [-20, 0, 0])
 

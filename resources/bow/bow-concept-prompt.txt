@@ -1,0 +1,32 @@
+I'm designing a futuristic toy sci-fi bow for my own VR game and I need concept art that I can model from in Blender. The attached image is the two-handed blaster already in the game, with the game's hands. The bow must look like it came from the same maker, the same product line, as that blaster. Please generate one image: a clean model sheet of the bow.
+
+HOW THE BOW WORKS (this is the important part)
+- It is a compact energy bow, about 90 cm tall, held upright in the left hand by a central grip.
+- Riser (the middle part): the heavy, designed part. An ergonomic grip for the left hand, raked like the blaster's grips, and above it an open arrow window with a small charcoal emitter ring that the arrow passes through, glowing teal on its inner edge like the blaster's muzzle.
+- Limbs: two short, rigid, swept-back limbs, the same shape mirrored above and below, tapering to the tips. They do not bend. Each tip ends in a charcoal engineered connector, like the sockets on the blaster.
+- String: not a cord but a thin, very bright teal energy line running from tip connector to tip connector, like the slim beam core of the blaster.
+- Arrow: an energy arrow. A thin bright teal core line as the shaft, with a small solid arrowhead (charcoal with a teal glowing edge) and a small solid nock at the back with three tiny charcoal fins, and one or two thin charcoal rings floating around the shaft, like the rings on the blaster's beam. It appears when the string is pulled.
+- Drawn: the right hand pinches the nock on the string and pulls it back, the energy string becomes a sharp V, and the arrow lies from the nock through the emitter ring, pointing forward.
+
+WHAT TO DRAW
+A model sheet on a plain light grey studio background with three views of the same design:
+1. Left: strict side view (orthographic, bow upright, aiming to the right), at rest: string straight, no arrow.
+2. Middle: strict side view (orthographic, same scale, aiming to the right), fully drawn: string in a V, arrow in place.
+3. Right: a three-quarter hero view of the drawn bow held by the two cartoon hands from the attached image, left hand on the grip, right hand pinching the nock.
+The two side views must be the same scale and exactly consistent with each other, so I can trace them. The riser and limbs are identical in both; only the string and arrow differ.
+
+STYLE
+- The same as the attached blaster: a premium designer toy in moulded plastic, sleek modern sci-fi, like a concept car or a high-end sports gadget. Flat-ish planes meeting in tight rounded edges, a few crisp confident lines, angled panel splits, a fast forward-leaning silhouette. Cool, not cute, not menacing.
+- Clearly futuristic. Nothing rustic or medieval: no wood, no leather, no feathers, no cord, no curved traditional longbow shape. Not a real compound bow either: no pulleys, cams, cables, stabiliser rods or sights.
+- NOT low poly and NOT realistic: no screws, no tiny greebles, no dirt or wear. Few, large, readable shapes. Detail comes from big panel splits, a couple of inset grooves, colour blocking and glowing elements.
+- The grip must be thick enough for the chunky white mitten hands.
+
+COLOUR AND MATERIALS (same as the blaster)
+- Main shells: glossy warm white plastic.
+- Secondary: matte charcoal grey for the grip, inner structure, emitter ring and tip connectors.
+- Accents, used sparingly: bright red (one block on the riser, like the blaster's power pack), sunflower yellow for one small button.
+- Energy: bright teal/cyan for the string, the arrow, the emitter ring and one thin light strip along each limb.
+- Flat, saturated toy colours, soft studio lighting, soft contact shadows, no lens flare, no bloom washing out the shapes.
+
+DO NOT INCLUDE
+The blaster itself, text, labels, logos, numbers, arrows as annotations, callouts, background props, scenery, extra variants, cutaways or exploded views. Just the three views of the one bow.

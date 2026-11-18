@@ -6,7 +6,7 @@ import * as effects from './effects.js'
 import * as hits from '../hits.js'
 import {shots} from './sound.js'
 
-// The Tripo blaster, in two halves: rear (pistol grip, grip_back) and front
+// The blaster (his model, exported by scripts/gun/export-blaster-parts.py), in two halves: rear (pistol grip, grip_back) and front
 // (foregrip, grip_front). It is only held by its grips (see grab.js). One
 // hand holds the whole gun, docked. A second hand closing on the other grip
 // pulls the halves apart: each half follows its hand, both turned to aim
@@ -15,7 +15,8 @@ import {shots} from './sound.js'
 // either hand lets go, the half in the hand that stays turns back to that
 // hand's proper hold, about the hand, and the other half slides over to it.
 // While the trigger of the hand on grip_back is held, it fires a stream of
-// energy bolts (see effects.js and sound.js).
+// energy bolts (see effects.js and sound.js), and the gun's trigger slides
+// straight back as far as that hand's trigger is pressed.
 export const gripsOnly = true
 export const falls = true
 
@@ -23,6 +24,7 @@ const REACH = 0.06          // metres from the free grip that the second hand ta
 const BEAM_SINK = 0.02      // metres the beam reaches into each half
 const DOCK = 0.2            // seconds for the halves to slide back together and
                             // the gun to turn back to the hand's hold
+const TRIGGER_TRAVEL = 0.024  // metres the gun's trigger slides back when fully pressed
 const RATE = 9             // shots per second while the trigger is held
 const BOLT_SPEED = 30       // metres per second
 const BOLT_LIFE = 1.5       // seconds
@@ -63,7 +65,7 @@ export async function create () {
   const plume = effects.plume()
   const flare = effects.flare()
   scene.add(plume, flare)
-  state = {root, rear, front, beam, stretch: null, docking: null, bolts: [], plume, flare, heat: 0,
+  state = {root, rear, front, beam, trigger: rear.getObjectByName('trigger'), pull: 0, stretch: null, docking: null, bolts: [], plume, flare, heat: 0,
     firing: null, sound: shots(root.getObjectByName('muzzle'))}
   return root
 }
@@ -196,6 +198,33 @@ export function buttonPressed (side, button) {
 export function buttonReleased (side, button) {
   if (button === 'trigger' && state?.firing?.side === side) {
     state.firing = null
+  }
+}
+
+// How far the trigger of the hand on the back grip is pressed, 0 to 1: the
+// controller's own reading, or all the way while firing where there is none
+// (tracked hands)
+function triggerPull () {
+  const side = ['left', 'right'].find(side => mine(grab.heldIn(side)) && onBack(side)) ||
+    (state.stretch && state.stretch.back)
+  if (!side) {
+    return 0
+  }
+  const session = renderer.xr.getSession()
+  for (const source of session ? session.inputSources : []) {
+    if (source.handedness === side && source.gamepad && !source.hand) {
+      return source.gamepad.buttons[0]?.value ?? 0
+    }
+  }
+  return state.firing ? 1 : 0
+}
+
+function updateTrigger () {
+  if (state.trigger) {
+    // Eased a little, so a reading that jumps does not make it snap
+    state.pull += (triggerPull() - state.pull) * 0.5
+    state.trigger.position.z = TRIGGER_TRAVEL * state.pull
+    state.root.userData.pull = state.pull
   }
 }
 
@@ -394,6 +423,7 @@ export function update () {
       state.docking = null
     }
   }
+  updateTrigger()
   updateBeam()
   updateShots()
 }
