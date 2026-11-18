@@ -24,6 +24,7 @@ export async function create () {
   base.castShadow = true
 
   util.hideCollisionMeshes(base)
+  util.metal(base)
 
   base.traverse(child => {
     if (child.isMesh &&

@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 
 export const toRadians = THREE.MathUtils.degToRad
 export const toDegrees = THREE.MathUtils.radToDeg
@@ -170,6 +171,70 @@ export function hideCollisionMeshes (object) {
   object.traverse((child) => {
     if (child.name.startsWith('collision')) {
       child.visible = false
+    }
+  })
+}
+
+// Things to reflect, since the room has only lights. Each is made once, at
+// the first call, blurred, and shared by whoever asks.
+const mirrored = {}
+function reflected (name, build, blur) {
+  if (name in mirrored) return mirrored[name]
+  const xr = renderer.xr.enabled
+  const target = renderer.getRenderTarget()
+  try {
+    renderer.xr.enabled = false
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    mirrored[name] = pmrem.fromScene(build(), blur).texture
+    pmrem.dispose()
+  }
+  catch (error) {
+    console.warn('no reflections', error)
+    mirrored[name] = null
+  }
+  finally {
+    renderer.xr.enabled = xr
+    renderer.setRenderTarget(target)
+  }
+  return mirrored[name]
+}
+
+// A small lit room, for glossy paint and plastic
+export function reflections () {
+  return reflected('room', () => new RoomEnvironment(), 0.04)
+}
+
+// A dark studio with a few bright panels, for metal: in the white room
+// chrome comes out white all over, and it is the dark between the lights
+// that makes it read as metal
+function studio () {
+  const scene = new THREE.Scene()
+  scene.background = new THREE.Color(0x1a1c20)
+  const panel = (width, height, position, brightness) => {
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, height),
+      new THREE.MeshBasicMaterial({color: new THREE.Color().setScalar(brightness), side: THREE.DoubleSide}))
+    mesh.position.set(...position)
+    mesh.lookAt(0, 0, 0)
+    scene.add(mesh)
+  }
+  panel(8, 8, [0, 8, 0], 6)           // overhead
+  panel(5, 6, [7, 2, 4], 3)           // to the right, in front
+  panel(3, 6, [-7, 1, -3], 2)         // to the left, behind
+  panel(20, 20, [0, -6, 0], 0.5)      // the floor
+  return scene
+}
+
+// Metal mirrors its surroundings and has no colour of its own: with nothing
+// to mirror it comes out black. Only the metal materials of the object get
+// the studio, so nothing else pays for it.
+export function metal (object) {
+  object.traverse(child => {
+    for (const material of [child.material].flat()) {
+      if (material?.isMeshStandardMaterial && material.metalness > 0.5 && !material.envMap) {
+        material.envMap = reflected('studio', studio, 0.02)
+        material.needsUpdate = true
+      }
     }
   })
 }

@@ -55,13 +55,9 @@ export async function create () {
     if (child.isMesh && !child.name.startsWith('collision')) {
       child.castShadow = true
       child.receiveShadow = true
-      // No environment to mirror: full metal would come out black
-      if (child.material.metalness > 0.5) {
-        child.material.metalness = 0.35
-        child.material.roughness = 0.3
-      }
     }
   })
+  util.metal(root)
   util.hideCollisionMeshes(root)
 
   state = {

@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import * as util from '../util.js'
 import * as physics from '../physics.js'
 import * as grab from '../grab.js'
@@ -60,7 +59,7 @@ export async function create () {
   const model = name => gltf.scene.getObjectByName(name)
   state = {
     models: {ball: model('ball'), pin: model('pin')},
-    env: reflections(),
+    env: util.reflections(),
     ball: null, pins: [], home: new THREE.Vector3(), centre: new THREE.Vector3(),
     held: {left: null, right: null}, trail: {left: [], right: []},
     slide: null, moves: [], signs: [], roll: null, throws: 0, rerackAt: null,
@@ -75,28 +74,6 @@ export async function create () {
   })
   util.hideCollisionMeshes(gltf.scene)
   return model('bowling')
-}
-
-// Something for the ball to reflect, since the room has only lights: a
-// small lit room, seen blurred
-function reflections () {
-  const xr = renderer.xr.enabled
-  const target = renderer.getRenderTarget()
-  try {
-    renderer.xr.enabled = false
-    const pmrem = new THREE.PMREMGenerator(renderer)
-    const texture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
-    pmrem.dispose()
-    return texture
-  }
-  catch (error) {
-    console.warn('bowling: no reflections', error)
-    return null
-  }
-  finally {
-    renderer.xr.enabled = xr
-    renderer.setRenderTarget(target)
-  }
 }
 
 // ---------------------------------------------------------------- bodies
@@ -262,7 +239,6 @@ export function stow () {
 
 export function dispose () {
   stow()
-  state.env?.dispose()
   state = null
 }
 

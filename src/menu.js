@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import * as hand from './hand.js'
 import { gadgets } from './gadgets.js'
+import * as util from './util.js'
 
 // The gadget menu the watch opens: a small copy of every gadget not out in
 // the world, on an arc in front of the chest, turning slowly, with its name
@@ -82,6 +83,7 @@ export async function create () {
           ? gltf.scene.getObjectByName(gadget.root)
           : gltf.scene.children[0]
     const mini = model.clone()
+    util.metal(mini)
     mini.traverse(child => {
       if (child.name.startsWith('collision')) {
         child.visible = false
