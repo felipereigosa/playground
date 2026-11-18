@@ -8,6 +8,7 @@ import * as util from './util.js'
 import * as world from './world'
 import * as hand from './hand.js'
 import * as environment from './environment.js'
+import * as snapshot from './snapshot.js'
 
 let entered
 
@@ -170,6 +171,13 @@ async function init () {
           })
         }
       })
+
+    // A saved scene to look at instead of the playground (src/snapshot.js)
+    const query = new URLSearchParams(location.search)
+    if (query.has('snapshot')) {
+      await snapshot.view(query.get('snapshot'))
+      return
+    }
 
     const rightHand = await hand.load()
     rightController.add(rightHand)
@@ -362,7 +370,10 @@ function backToDesktop () {
 }
 
 export function buttonPressed (side, button) {
-  if (side === 'left' && button === 'y') {
+  if (button === 'trigger' && snapshot.armed()) {
+    snapshot.take(side)
+  }
+  else if (side === 'left' && button === 'y') {
     backToDesktop()
   }
   else if (side === 'left' && button === 'x') {
@@ -378,6 +389,9 @@ export function buttonPressed (side, button) {
 
 export function buttonReleased (side, button) {
   // Left X and Y are taken: X aligns to the head, Y leaves VR
+  if (button === 'trigger' && snapshot.armed()) {
+    return
+  }
   if (side !== 'left' || (button !== 'x' && button !== 'y')) {
     if (world?.buttonReleased) {
       world?.buttonReleased(side, button)

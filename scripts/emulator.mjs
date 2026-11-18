@@ -16,6 +16,9 @@
 //   page.shot(file)              screenshot (png)
 //   page.logs                    console messages so far
 //
+// A scenario may export `size = [width, height]` for the page and its
+// screenshots (1280 x 800 when not given).
+//
 // Positions are [x, y, z] in metres in the XR reference space (floor at 0),
 // rotations [x, y, z] in degrees, applied in YXZ order.
 import fs from 'fs'
@@ -24,7 +27,7 @@ import path from 'path'
 const devtools = process.env.DEVTOOLS || 'http://localhost:9223'
 const base = process.env.PLAYGROUND_URL || 'https://localhost:8300'
 
-export async function open (query = '') {
+export async function open (query = '', size = [1280, 800]) {
   const url = `${base}/?emulate${query ? '&' + query : ''}`
   const list = await (await fetch(`${devtools}/json`)).json()
   // Reuse a tab, so Chromium never runs out of them and quits
@@ -61,7 +64,7 @@ export async function open (query = '') {
   await send('Runtime.enable')
   await send('Security.setIgnoreCertificateErrors', {ignore: true})
   await send('Emulation.setDeviceMetricsOverride',
-             {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false})
+             {width: size[0], height: size[1], deviceScaleFactor: 1, mobile: false})
   await send('Page.navigate', {url})
 
   const page = {
@@ -186,7 +189,7 @@ if (process.argv[1] === new URL(import.meta.url).pathname && process.argv[2]) {
   const scenario = await import(path.resolve(process.argv[2]))
   let page
   try {
-    page = await open(scenario.query || '')
+    page = await open(scenario.query || '', scenario.size)
     await scenario.default(page)
   }
   catch (error) {
